@@ -2,252 +2,270 @@ package com.github.stelpolvo.aiocore.command.handler;
 
 import com.github.stelpolvo.aiocore.api.EconomyManager;
 import com.github.stelpolvo.aiocore.api.Messenger;
+import com.github.stelpolvo.aiocore.api.PlayerDataManager;
+import com.github.stelpolvo.aiocore.api.data.EconomyData;
+import com.github.stelpolvo.aiocore.api.data.PlayerData;
 import com.github.stelpolvo.aiocore.command.CommandAPI;
-import net.milkbowl.vault.economy.Economy;
-import net.milkbowl.vault.economy.EconomyResponse;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * /aio economy pay [currency] [playerName] [amount]
+ * /aio economy pay [playerName] [currency] [amount]
  * /aio economy look [currency]
+ * /aio economy get [playerName] [currency]
+ * /aio economy set [playerName] [currency] [amount]
+ * /aio economy take [playerName] [currency] [amount]
+ * /aio economy give [playerName] [currency] [amount]
  */
 public class EconomyHandler implements CommandAPI {
+    public static final Map<String, String> PERM_MAP = ImmutableMap.of(
+            "pay", "aio.def.economy.pay",
+            "look", "aio.def.economy.look",
+            "get", "aio.admin.economy.get",
+            "set", "aio.admin.economy.set",
+            "take", "aio.admin.economy.take",
+            "give", "aio.admin.economy.give"
+    );
 
-    public static final String PERM = "aio.def.economy";
+    public static final List<String> AMOUNT_LIST = ImmutableList.of("1", "10", "100", "1000", "10000");
 
-    private final EconomyManager manager;
+    private final EconomyManager economy;
+    private final PlayerDataManager manager;
     private final Messenger messenger;
+    private final Logger logger;
 
-    public EconomyHandler(EconomyManager manager, Messenger messenger) {
+    public EconomyHandler(EconomyManager economy, PlayerDataManager manager, Messenger messenger, Logger logger) {
+        this.economy = economy;
         this.manager = manager;
         this.messenger = messenger;
+        this.logger = logger;
     }
 
     @Override
     public boolean onPlayer(Player player, String[] args) {
-        if (args.length < 2) {
-            sendUsage(player);
-            return true;
-        }
-
-        switch (args[1].toLowerCase(Locale.ROOT)) {
-            case "pay"  -> handlePay(player, args);
-            case "look" -> handleLook(player, args);
-            default     -> sendUsage(player);
-        }
-        return true;
+        return onCommand(player, args);
     }
 
     @Override
     public boolean onConsole(CommandSender sender, String[] args) {
-        return false;
+        return onCommand(sender, args);
     }
 
-    private void handlePay(Player player, String[] args) {
-        if (args.length < 5) {
-            messenger.send(player, Messenger.ECONOMY_USAGE_PAY);
-            return;
-        }
-
-        String currencyKey = args[2];
-        String targetName  = args[3];
-        String amountRaw   = args[4];
-
-        EconomyManager.AiOEconomy aiOEconomy = manager.getAiOEconomy(currencyKey);
-        if (aiOEconomy == null) {
-            messenger.send(player, Messenger.ECONOMY_INVALID_CURRENCY,
-                    "currency", currencyKey);
-            return;
-        }
-
-        if (!aiOEconomy.isTransferable()) {
-            messenger.send(player, Messenger.ECONOMY_DISABLED,
-                    "currency", currencyKey);
-            return;
-        }
-
-        Economy economy = aiOEconomy.getEconomy();
-        String currencyName = economy.currencyNamePlural();
-
-        // 目标玩家
-        OfflinePlayer target = Bukkit.getPlayerExact(targetName);
-        if (target == null) {
-            target = Bukkit.getOfflinePlayer(targetName);
-            if (!target.hasPlayedBefore()) {
-                messenger.send(player, Messenger.ECONOMY_INVALID_RECEIVER,
-                        "receiver", targetName);
-                return;
+    public boolean onCommand(CommandSender sender, String[] args) {
+        if (args.length >= 3){
+            String rootArg = args[1].toLowerCase(Locale.ROOT);
+            if (!(sender instanceof Player)){
+                if (rootArg.equals("pay") || rootArg.equals("look")){
+                    messenger.send(sender, Messenger.IS_PLAYER_COMMAND);
+                    return true;
+                }
             }
-        }
-        if (target.getUniqueId().equals(player.getUniqueId())) {
-            messenger.send(player, Messenger.ECONOMY_SELF_TRANSFER);
-            return;
-        }
-
-        double amount;
-        try {
-            amount = Double.parseDouble(amountRaw);
-        } catch (NumberFormatException e) {
-            messenger.send(player, Messenger.ECONOMY_INVALID_AMOUNT,
-                    "amount", amountRaw);
-            return;
-        }
-        if (!Double.isFinite(amount) || amount <= 0) {
-            messenger.send(player, Messenger.ECONOMY_AMOUNT_TOO_SMALL,
-                    "currency", currencyName);
-            return;
-        }
-
-        double totalCost = amount;
-        String receiverName = target.getName() != null ? target.getName() : targetName;
-
-        synchronized (this) {
-            double senderBalance = economy.getBalance(player.getName());
-            if (senderBalance < totalCost) {
-                messenger.send(player, Messenger.ECONOMY_INSUFFICIENT_FUNDS,
-                        "amount",   economy.format(totalCost),
-                        "currency", currencyName);
-                return;
+            try {
+                return switch (rootArg) {
+                    case "pay" ->
+                            sender.hasPermission(PERM_MAP.get(rootArg)) ? pay((Player) sender, args) : messenger.send(sender, Messenger.NO_PERMISSION, "permission", PERM_MAP.get(rootArg));
+                    case "look" ->
+                            sender.hasPermission(PERM_MAP.get(rootArg)) ? look((Player) sender, args) : messenger.send(sender, Messenger.NO_PERMISSION, "permission", PERM_MAP.get(rootArg));
+                    case "get" ->
+                            sender.hasPermission(PERM_MAP.get(rootArg)) ? get(sender, args) : messenger.send(sender, Messenger.NO_PERMISSION, "permission", PERM_MAP.get(rootArg));
+                    case "set" ->
+                            sender.hasPermission(PERM_MAP.get(rootArg)) ? set(sender, args) : messenger.send(sender, Messenger.NO_PERMISSION, "permission", PERM_MAP.get(rootArg));
+                    case "take" ->
+                            sender.hasPermission(PERM_MAP.get(rootArg)) ? take(sender, args) : messenger.send(sender, Messenger.NO_PERMISSION, "permission", PERM_MAP.get(rootArg));
+                    case "give" ->
+                            sender.hasPermission(PERM_MAP.get(rootArg)) ? give(sender, args) : messenger.send(sender, Messenger.NO_PERMISSION, "permission", PERM_MAP.get(rootArg));
+                    default -> sendUsage(sender);
+                };
+            }catch (NumberFormatException ne){
+                messenger.send(sender, Messenger.NUMBER_FORMAT_EXCEPTION);
+            }catch (Exception e){
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
 
-            EconomyResponse withdraw = economy.withdrawPlayer(player.getName(), totalCost);
-            if (!withdraw.transactionSuccess()) {
-                messenger.send(player, Messenger.ECONOMY_WITHDRAW_FAILED,
-                        "reason", String.valueOf(withdraw.errorMessage));
-                return;
-            }
-
-            EconomyResponse deposit = economy.depositPlayer(receiverName, amount);
-            if (!deposit.transactionSuccess()) {
-                // 回滚
-                economy.depositPlayer(player.getName(), totalCost);
-                messenger.send(player, Messenger.ECONOMY_DEPOSIT_FAILED,
-                        "reason", String.valueOf(deposit.errorMessage));
-                return;
-            }
         }
-
-        // 成功消息
-        messenger.send(player, Messenger.ECONOMY_SUCCESS_SENDER,
-                "receiver", receiverName,
-                "amount",   economy.format(amount),
-                "currency", currencyName,
-                "fee",      economy.format(0));
-
-        if (target.isOnline()) {
-            Player targetPlayer = target.getPlayer();
-            if (targetPlayer != null) {
-                messenger.send(targetPlayer, Messenger.ECONOMY_SUCCESS_RECEIVER,
-                        "sender",   player.getName(),
-                        "amount",   economy.format(amount),
-                        "currency", currencyName);
-            }
-        }
-
-        // TODO: logging.log-transfers
+        return true;
     }
 
-    private void handleLook(Player player, String[] args) {
-        List<String> currencyKeys = new ArrayList<>();
-
-        if (args.length >= 3) {
-            currencyKeys.add(args[2]);
-        } else {
-            currencyKeys.addAll(manager.getCurrencyList());
+    public boolean pay(Player player, String[] args){
+        if (args.length < 5){
+            sendUsage(player);
+            return true;
         }
-
-        if (currencyKeys.isEmpty()) {
-            messenger.send(player, Messenger.ECONOMY_NO_CURRENCIES);
-            return;
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(args[3]);
+        if (!offlinePlayer.hasPlayedBefore()){
+            messenger.send(player, Messenger.ECONOMY_INVALID_RECEIVER);
+            return true;
         }
-
-        for (String currencyKey : currencyKeys) {
-            EconomyManager.AiOEconomy aiOEconomy = manager.getAiOEconomy(currencyKey);
-            if (aiOEconomy == null) {
-                messenger.send(player, Messenger.ECONOMY_INVALID_CURRENCY,
-                        "currency", currencyKey);
-                continue;
+        EconomyManager.AiOEconomy eco = economy.getAiOEconomy(args[3]);
+        if (eco == null){
+            messenger.send(player, Messenger.ECONOMY_INVALID_CURRENCY);
+            return true;
+        }
+        double amount = Double.parseDouble(args[4]);
+        if (!eco.getEconomy().has(player, amount)) {
+            messenger.send(player, Messenger.ECONOMY_INSUFFICIENT_FUNDS);
+            return true;
+        }
+        if (eco.isTransferable()) {
+            PlayerData sender = manager.getPlayerData().get(player.getUniqueId());
+            PlayerData receiver = manager.getPlayerData().get(offlinePlayer.getUniqueId());
+            sender.getEconomyData().set(args[3], sender.getEconomyData().get(args[3]) - amount);
+            receiver.getEconomyData().set(args[3], receiver.getEconomyData().get(args[3]) + amount);
+            messenger.send(player, Messenger.ECONOMY_SUCCESS_SENDER, "receiver", offlinePlayer.getName(), "amount", eco.getEconomy().format(amount), "currency", eco.getEconomy().currencyNamePlural());
+            if (offlinePlayer.isOnline() && offlinePlayer instanceof Player r){
+                messenger.send(r, Messenger.ECONOMY_SUCCESS_SENDER, "sender", r.getName(), "amount", eco.getEconomy().format(amount), "currency", eco.getEconomy().currencyNamePlural());
             }
-
-            Economy economy = aiOEconomy.getEconomy();
-            double balance = economy.getBalance(player.getName());
-
-            // look 是「余额展示」消息，也可以做一个专门的 key: economy.messages.look
-            messenger.send(player, "look",
-                    "currency", economy.currencyNamePlural(),
-                    "amount",   economy.format(balance));
+        }else {
+            messenger.send(player, Messenger.ECONOMY_DISABLED);
         }
+        return true;
     }
 
-    private void sendUsage(Player player) {
-        messenger.send(player, Messenger.ECONOMY_USAGE_PAY);
-        messenger.send(player, Messenger.ECONOMY_USAGE_LOOK);
+
+
+    public OfflinePlayer getOfflinePlayer(String playerName){
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
+        if (!offlinePlayer.hasPlayedBefore()){
+            return null;
+        }
+        return offlinePlayer;
     }
 
-    // ---------------------------------------------------------------------
-    // Tab
-    // ---------------------------------------------------------------------
+    public boolean look(Player player, String[] args){
+        EconomyManager.AiOEconomy eco = economy.getAiOEconomy(args[2]);
+        if (eco == null){
+            messenger.send(player, Messenger.ECONOMY_INVALID_CURRENCY);
+            return true;
+        }
+        messenger.send(player, Messenger.ECONOMY_LOOK, "amount", eco.getEconomy().format(eco.getEconomy().getBalance(player)), "currency", eco.getEconomy().currencyNamePlural());
+        return true;
+    }
+    public boolean get(CommandSender sender, String[] args){
+        OfflinePlayer offlinePlayer = getOfflinePlayer(args[2]);
+        if (offlinePlayer == null){
+            messenger.send(sender, Messenger.ECONOMY_INVALID_RECEIVER);
+            return true;
+        }
+        EconomyManager.AiOEconomy eco = economy.getAiOEconomy(args[3]);
+        if (eco == null){
+            messenger.send(sender, Messenger.ECONOMY_INVALID_CURRENCY);
+            return true;
+        }
+        messenger.send(sender, Messenger.ECONOMY_GET, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().currencyNamePlural());
+        return true;
+    }
+    public boolean set(CommandSender sender, String[] args){
+        if (args.length < 5){
+            sendUsage(sender);
+            return true;
+        }
+        OfflinePlayer offlinePlayer = getOfflinePlayer(args[2]);
+        if (offlinePlayer == null){
+            messenger.send(sender, Messenger.ECONOMY_INVALID_RECEIVER);
+            return true;
+        }
+        EconomyManager.AiOEconomy eco = economy.getAiOEconomy(args[3]);
+        if (eco == null){
+            messenger.send(sender, Messenger.ECONOMY_INVALID_CURRENCY);
+            return true;
+        }
+        EconomyData data = manager.getByName(offlinePlayer.getName()).getEconomyData();
+        data.set(args[3], Double.parseDouble(args[4]));
+        messenger.send(sender, Messenger.ECONOMY_SET, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(data.get(args[3])));
+        return true;
+    }
 
-    @Override
+    public boolean take(CommandSender sender, String[] args){
+        if (args.length < 5){
+            sendUsage(sender);
+            return true;
+        }
+        OfflinePlayer offlinePlayer = getOfflinePlayer(args[2]);
+        if (offlinePlayer == null){
+            messenger.send(sender, Messenger.ECONOMY_INVALID_RECEIVER);
+            return true;
+        }
+        EconomyManager.AiOEconomy eco = economy.getAiOEconomy(args[3]);
+        if (eco == null){
+            messenger.send(sender, Messenger.ECONOMY_INVALID_CURRENCY);
+            return true;
+        }
+        EconomyData data = manager.getByName(offlinePlayer.getName()).getEconomyData();
+        data.set(args[3], data.get(args[3]) - Double.parseDouble(args[4]));
+        messenger.send(sender, Messenger.ECONOMY_TAKE, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(data.get(args[3])));
+        return true;
+    }
+    public boolean give(CommandSender sender, String[] args){
+        if (args.length < 5){
+            sendUsage(sender);
+            return true;
+        }
+        OfflinePlayer offlinePlayer = getOfflinePlayer(args[2]);
+        if (offlinePlayer == null){
+            messenger.send(sender, Messenger.ECONOMY_INVALID_RECEIVER);
+            return true;
+        }
+        EconomyManager.AiOEconomy eco = economy.getAiOEconomy(args[3]);
+        if (eco == null){
+            messenger.send(sender, Messenger.ECONOMY_INVALID_CURRENCY);
+            return true;
+        }
+        EconomyData data = manager.getByName(offlinePlayer.getName()).getEconomyData();
+        data.set(args[3], data.get(args[3]) + Double.parseDouble(args[4]));
+        messenger.send(sender, Messenger.ECONOMY_GIVE, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(data.get(args[3])));
+        return true;
+    }
+    public boolean sendUsage(CommandSender sender){
+        messenger.send(sender, "/aio economy pay [playerName] [currency] [amount]");
+        messenger.send(sender, "/aio economy look [currency]");
+        if (sender.isOp()){
+            messenger.send(sender, "/aio economy get [playerName] [currency]");
+            messenger.send(sender, "/aio economy set [playerName] [currency] [amount]");
+            messenger.send(sender, "/aio economy take [playerName] [currency] [amount]");
+            messenger.send(sender, "/aio economy give [playerName] [currency] [amount]");
+        }
+        return true;
+    }
+
     public List<String> onPlayerTab(Player player, String[] args) {
-        if (args.length == 2) {
-            return filter(List.of("pay", "look"), args[1]);
-        }
-
-        String sub = args[1].toLowerCase(Locale.ROOT);
-        switch (sub) {
-            case "pay" -> {
-                if (args.length == 3) {
-                    return filter(manager.getCurrencyList(), args[2]);
-                }
-                if (args.length == 4) {
-                    return filter(
-                            Bukkit.getOnlinePlayers().stream()
-                                    .map(Player::getName)
-                                    .collect(Collectors.toList()),
-                            args[3]);
-                }
-                if (args.length == 5) {
-                    return filter(List.of("1", "10", "100", "1000"), args[4]);
-                }
-            }
-            case "look" -> {
-                if (args.length == 3) {
-                    return filter(manager.getCurrencyList(), args[2]);
-                }
-            }
-            default -> { }
-        }
-        return List.of();
+        return onTabComplete(player, args);
     }
 
     public List<String> onConsoleTab(CommandSender sender, String[] args) {
-        return List.of();
+        return onTabComplete(sender, args);
     }
 
-    private List<String> filter(List<String> candidates, String prefix) {
-        if (prefix == null || prefix.isEmpty()) {
-            return candidates;
+    public List<String> onTabComplete(CommandSender sender, String[] args) {
+        if (args.length == 2){
+            return PERM_MAP.entrySet().stream().filter(e -> sender.hasPermission(e.getValue()) && sender instanceof Player && e.getKey().contains(args[1].toLowerCase())).map(Map.Entry::getKey).toList();
         }
-        String lower = prefix.toLowerCase(Locale.ROOT);
-        return candidates.stream()
-                .filter(s -> s.toLowerCase(Locale.ROOT).startsWith(lower))
-                .collect(Collectors.toList());
+        String rootArg = args[1].toLowerCase();
+        if (args.length == 3){
+            switch (rootArg) {
+                case "look":
+                    return economy.getCurrencyList();
+                case "pay":
+                    if (!(sender instanceof Player)){
+                        return List.of();
+                    }
+                case "get", "set", "take", "give":
+                    return sender.hasPermission(PERM_MAP.get(rootArg)) ? Arrays.stream(Bukkit.getOfflinePlayers()).map(OfflinePlayer::getName).filter(Objects::nonNull).filter(s -> s.contains(args[2])).toList() : List.of();
+                default:
+                    return List.of();
+            }
+        }
+        return switch (rootArg) {
+            case "pay", "get", "set", "take", "give" -> sender.hasPermission(PERM_MAP.get(rootArg)) ? (args.length == 4 ? economy.getCurrencyList() : (args.length == 5 ? AMOUNT_LIST : List.of())) : List.of();
+            default -> List.of();
+        };
     }
 
-    public boolean hasPermission(CommandSender sender) {
-        return sender.hasPermission(PERM);
-    }
-
-    public String getPermission() {
-        return PERM;
-    }
 }

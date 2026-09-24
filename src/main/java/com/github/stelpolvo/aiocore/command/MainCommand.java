@@ -21,17 +21,13 @@ public class MainCommand implements TabExecutor {
         Objects.requireNonNull(command).setExecutor(main);
         command.setTabCompleter(main);
         main.aio = instance;
-        main.commands.put("money", new EconomyHandler(instance.getEconomyManager(), instance.getMessenger()));
+        main.commands.put("money", new EconomyHandler(instance.getEconomyManager(), instance.getPlayerDataManager(), instance.getMessenger(), instance.getJavaPlugin().getLogger()));
     }
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (args.length == 0) return true;
         CommandAPI api;
         if ((api = commands.get(args[0])) != null) {
-            if (!api.hasPermission(sender)){
-                aio.getMessenger().send(sender, Messenger.NO_PERMISSION, "permission", api.getPermission());
-                return true;
-            }
             if (sender instanceof Player) {
                 return api.onPlayer((Player) sender, args);
             }else {
@@ -43,23 +39,13 @@ public class MainCommand implements TabExecutor {
     }
 
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
-        if (args.length >= 2){
-            CommandAPI api;
-            if ((api = commands.get(args[0])) != null) {
-                if (sender instanceof Player) {
-                    return api.onPlayerTab((Player) sender, args);
-                }else {
-                    return api.onConsoleTab(sender, args);
-                }
+        CommandAPI api;
+        if (args.length >= 1 && (api = commands.get(args[0])) != null) {
+            if (sender instanceof Player) {
+                return api.onPlayerTab((Player) sender, args);
+            }else {
+                return api.onConsoleTab(sender, args);
             }
-        }else if (args.length == 1){
-            final List<String> tab = new ArrayList<>();
-            commands.forEach((k, v)-> {
-                if (v.hasPermission(sender) && k.contains(args[0])){
-                    tab.add(k);
-                }
-            });
-            return tab;
         }
         return Collections.emptyList();
     }

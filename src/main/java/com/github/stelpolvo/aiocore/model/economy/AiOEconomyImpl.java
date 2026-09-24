@@ -83,7 +83,7 @@ public class AiOEconomyImpl extends AbstractEconomy implements EconomyManager.Ai
 
     @Override
     public String format(double amount) {
-        return format.replaceAll("%symbol%", symbol).replaceAll("%amount%", String.format(this.fractionalDigitsFormat, amount));
+        return format.replaceAll("%amount%", String.format(this.fractionalDigitsFormat, amount));
     }
 
     @Override

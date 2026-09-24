@@ -7,6 +7,8 @@ public interface Messenger {
     String PREFIX = "prefix";
     String NO_PERMISSION = "no-permission";
     String SUBCOMMAND_NOT_FOUND = "subcommand-not-found";
+    String NUMBER_FORMAT_EXCEPTION = "number-format-exception";
+    String IS_PLAYER_COMMAND = "is-player-command";
 
     String ECONOMY_SUCCESS_SENDER        = "success-sender";
     String ECONOMY_SUCCESS_RECEIVER      = "success-receiver";
@@ -22,7 +24,12 @@ public interface Messenger {
     String ECONOMY_USAGE_PAY             = "usage-pay";
     String ECONOMY_USAGE_LOOK            = "usage-look";
     String ECONOMY_NO_CURRENCIES         = "no-currencies";
-    void send(CommandSender sender, String key);
-    void send(CommandSender sender, String key, Object... keyValues);
+    String ECONOMY_LOOK = "look";
+    String ECONOMY_GET = "get";
+    String ECONOMY_SET = "set";
+    String ECONOMY_TAKE = "take";
+    String ECONOMY_GIVE = "give";
+    void send(CommandSender sender, String msg);
+    boolean send(CommandSender sender, String key, Object... keyValues);
     void load(YamlConfiguration config);
 }

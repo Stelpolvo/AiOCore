@@ -25,7 +25,7 @@ public interface AiO {
         return null;
     }
 
-    default PlayerDataManager playerDataManager(){ return null; }
+    default PlayerDataManager getPlayerDataManager(){ return null; }
 
     default PanelManager getPanelManager() {
         return null;

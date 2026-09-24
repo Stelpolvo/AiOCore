@@ -106,7 +106,7 @@ public final class AiOCore extends JavaPlugin implements AiO {
     }
 
     @Override
-    public PlayerDataManager playerDataManager(){
+    public PlayerDataManager getPlayerDataManager(){
         return this.playerDataManager;
     }
 

@@ -15,8 +15,4 @@ public interface CommandAPI {
 
     List<String> onConsoleTab(CommandSender sender, String[] args);
 
-    boolean hasPermission(CommandSender sender);
-
-    String getPermission();
-
 }

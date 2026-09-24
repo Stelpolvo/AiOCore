@@ -46,20 +46,20 @@ public class MessengerImpl implements Messenger {
     }
 
     @Override
-    public void send(CommandSender sender, String key) {
-        send(sender, key, new Object[0]);
+    public void send(CommandSender sender, String msg) {
+        send(sender, msg, new Object[0]);
     }
 
     @Override
-    public void send(CommandSender sender, String key, Object... keyValues) {
+    public boolean send(CommandSender sender, String key, Object... keyValues) {
         if (sender == null || key == null) {
-            return;
+            return false;
         }
 
         String raw = messages.get(key);
         if (raw == null) {
             sender.sendMessage(ChatColor.RED + messages.get(Messenger.PREFIX)+key);
-            return;
+            return false;
         }
 
         String text = applyPlaceholders(raw, keyValues);
@@ -68,6 +68,7 @@ public class MessengerImpl implements Messenger {
             text = PlaceholderAPI.setPlaceholders(player, text);
         }
         sender.sendMessage(colorize(messages.get(Messenger.PREFIX)+text));
+        return true;
     }
 
 

@@ -5,6 +5,8 @@ settings:
     prefix: "&c[AiOCore]&f"
     no-permission: "没有权限: {permission}"
     subcommand-not-found: "找不到子命令: {command}"
+    number-format-exception: "必须是数字格式"
+    is-player-command: "该命令仅玩家执行"
 economy:
   # 是否启用经济系统
   enabled: true
@@ -40,8 +42,13 @@ economy:
 
   messages:
     # {sender} 发送者, {receiver} 接收者, {amount} 金额, {currency} 货币显示名, {fee} 手续费
-    success-sender: "&a你向 &e{receiver} &a转账 &e{amount} {currency}&a，手续费 &e{fee} {currency}&a。"
+    success-sender: "&a你向 &e{receiver} &a转账 &e{amount} {currency}"
     success-receiver: "&a你收到来自 &e{sender} &a的 &e{amount} {currency}&a。"
+    look: "&a你的&e{currency}&a为&e{amount}"
+    get: "&a{player}的&e{currency}&a为&e{amount}"
+    set: "&a将{player}的&e{currency}&a设置为 &e{amount} "
+    take: "&a拿走{player}的&e{amount} {currency}"
+    give: "&a给予{player}&e{amount} {currency}"
     # 失败消息
     disabled: "&c该货币暂不支持转账。"
     disabled-global: "&c转账功能已关闭。"
@@ -51,11 +58,6 @@ economy:
     amount-too-small: "&c转账金额过小。"
     amount-too-large: "&c转账金额过大。"
     insufficient-funds: "&c余额不足。"
-    insufficient-funds-fee: "&c余额不足以支付手续费。"
-    cooldown: "&c转账过于频繁，请 &e{seconds} &c秒后再试。"
-    blocked-world: "&c当前世界不允许转账。"
-    blocked-sender: "&c你不被允许转出该货币。"
-    blocked-receiver: "&c对方不被允许接收该货币。"
     receiver-max-balance: "&c对方余额已达上限，无法接收。"
 
 
