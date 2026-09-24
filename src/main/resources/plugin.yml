@@ -1,4 +1,23 @@
 name: AiOCore
-version: '1.0-SNAPSHOT'
+version: '{version}'
+authors: ["Stelpolvo"]
 main: com.github.stelpolvo.aiocore.AiOCore
 api-version: '1.18'
+depend:
+  - Vault
+  - PlaceholderAPI
+commands:
+  aio:
+    description: aio 主命令
+    usage: /aio help
+    aliases:
+      - a
+
+permissions:
+  aio.admin:
+    default: op
+    children:
+      aio.def: true
+      aio.admin: true
+  aio.def.money:
+    default: true

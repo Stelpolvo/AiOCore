@@ -1,2 +1,63 @@
+settings:
+  # 数据保存间隔（秒）
+  save-interval-seconds: 60
+  messages:
+    prefix: "&c[AiOCore]&f"
+    no-permission: "没有权限: {permission}"
+    subcommand-not-found: "找不到子命令: {command}"
 economy:
+  # 是否启用经济系统
+  enabled: true
+  # 货币作为 Vault 默认经济
+  vault: "金币"
+  # ============================================================
+  # 货币定义
+  # 每个货币一个节点，键名即为货币 ID（存储时使用的字段名）
+  # ============================================================
+  currencies:
+    金币:
+      # 显示名（用于占位符、消息、Vault 注册名）
+      display-name: "金币"
+      # 单数 / 复数（Vault 接口用）
+      name-singular: "金币"
+      name-plural: "金币"
+      # 小数位
+      fractional-digits: 2
+      # 格式，%amount% 会被替换成数字，%symbol% 会被替换成符号
+      format: "%symbol%%amount%"
+      symbol: "¤"
+      # 是否允许转账
+      transferable: true
+
+    点券:
+      display-name: "点券"
+      name-singular: "点券"
+      name-plural: "点券"
+      fractional-digits: 0
+      format: "%amount% %symbol%"
+      symbol: "点"
+      transferable: true
+
+  messages:
+    # {sender} 发送者, {receiver} 接收者, {amount} 金额, {currency} 货币显示名, {fee} 手续费
+    success-sender: "&a你向 &e{receiver} &a转账 &e{amount} {currency}&a，手续费 &e{fee} {currency}&a。"
+    success-receiver: "&a你收到来自 &e{sender} &a的 &e{amount} {currency}&a。"
+    # 失败消息
+    disabled: "&c该货币暂不支持转账。"
+    disabled-global: "&c转账功能已关闭。"
+    invalid-currency: "&c未知的货币类型。"
+    invalid-receiver: "&c接收者不存在。"
+    self-transfer: "&c不能给自己转账。"
+    amount-too-small: "&c转账金额过小。"
+    amount-too-large: "&c转账金额过大。"
+    insufficient-funds: "&c余额不足。"
+    insufficient-funds-fee: "&c余额不足以支付手续费。"
+    cooldown: "&c转账过于频繁，请 &e{seconds} &c秒后再试。"
+    blocked-world: "&c当前世界不允许转账。"
+    blocked-sender: "&c你不被允许转出该货币。"
+    blocked-receiver: "&c对方不被允许接收该货币。"
+    receiver-max-balance: "&c对方余额已达上限，无法接收。"
+
+
+
   

@@ -5,6 +5,7 @@ import com.github.stelpolvo.aiocore.api.data.EconomyData;
 import com.github.stelpolvo.aiocore.api.data.PlayerData;
 import com.github.stelpolvo.aiocore.utils.FileUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -29,8 +30,8 @@ public class YamlPlayerDataManager implements PlayerDataManager {
 
     @Override
     public PlayerData getByName(String playerName) {
-        Player player = Bukkit.getPlayer(playerName);
-        if (player != null) {
+        OfflinePlayer player = Bukkit.getOfflinePlayer(playerName);
+        if (player.hasPlayedBefore()) {
             return getUUID(player.getUniqueId());
         }
         return null;
