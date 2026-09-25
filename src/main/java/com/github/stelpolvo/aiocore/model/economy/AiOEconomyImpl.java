@@ -91,6 +91,15 @@ public class AiOEconomyImpl extends AbstractEconomy implements EconomyManager.Ai
     }
 
     @Override
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    @Override
     public String currencyNamePlural() {
         return currencyNamePlural;
     }

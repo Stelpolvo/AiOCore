@@ -8,6 +8,7 @@ import com.github.stelpolvo.aiocore.api.data.PlayerData;
 import com.github.stelpolvo.aiocore.command.CommandAPI;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
