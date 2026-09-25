@@ -57,6 +57,10 @@ public class AiOEconomyImpl extends AbstractEconomy implements EconomyManager.Ai
         enabled = false;
     }
 
+    public String getCurrencyKey() {
+        return currencyKey;
+    }
+
     public boolean isTransferable() {
         return this.transferable;
     }

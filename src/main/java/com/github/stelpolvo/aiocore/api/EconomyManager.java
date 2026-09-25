@@ -8,9 +8,11 @@ import java.util.logging.Logger;
 
 public interface EconomyManager {
 
-    void load(ConfigurationSection section, PlayerDataManager dataManager, Logger logger);
+    void load(ConfigurationSection section, PlayerDataManager dataManager, Logger logger, Messenger messenger);
 
     void register(String currencyKey, AiOEconomy economy);
+
+    boolean isEnabled();
 
     AiOEconomy getAiOEconomy(String currencyKey);
 
@@ -21,6 +23,8 @@ public interface EconomyManager {
     interface AiOEconomy {
 
         Economy getEconomy();
+
+        String getCurrencyKey();
 
         void disable();
 

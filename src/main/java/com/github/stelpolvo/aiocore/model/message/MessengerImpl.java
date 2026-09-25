@@ -43,6 +43,7 @@ public class MessengerImpl implements Messenger {
                 }
             });
         }
+
     }
 
     @Override
@@ -58,7 +59,7 @@ public class MessengerImpl implements Messenger {
 
         String raw = messages.get(key);
         if (raw == null) {
-            sender.sendMessage(ChatColor.RED + messages.get(Messenger.PREFIX)+key);
+            sender.sendMessage(ChatColor.RED + messages.get(Messenger.PREFIX).replace("&", "§")+key);
             return false;
         }
 
@@ -67,7 +68,7 @@ public class MessengerImpl implements Messenger {
         if (sender instanceof Player player) {
             text = PlaceholderAPI.setPlaceholders(player, text);
         }
-        sender.sendMessage(colorize(messages.get(Messenger.PREFIX)+text));
+        sender.sendMessage(colorize(messages.get(Messenger.PREFIX)+text).replace("&", "§"));
         return true;
     }
 

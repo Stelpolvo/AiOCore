@@ -5,6 +5,7 @@ import com.github.stelpolvo.aiocore.api.EconomyManager;
 import com.github.stelpolvo.aiocore.api.Messenger;
 import com.github.stelpolvo.aiocore.api.PlayerDataManager;
 import com.github.stelpolvo.aiocore.command.MainCommand;
+import com.github.stelpolvo.aiocore.data.YamlPlayerDataManager;
 import com.github.stelpolvo.aiocore.model.economy.EconomyManagerImpl;
 import com.github.stelpolvo.aiocore.model.message.MessengerImpl;
 import com.github.stelpolvo.aiocore.model.placeholder.AiOHook;
@@ -52,11 +53,12 @@ public final class AiOCore extends JavaPlugin implements AiO {
         }else {
             this.messenger.load(config);
         }
+        // player data
+        this.playerDataManager = new YamlPlayerDataManager(new File(getDataFolder(), config.getString("settings.save-path", "/data")), getLogger(), messenger);
+        Bukkit.getPluginManager().registerEvents(this.playerDataManager, this);
         // economy
         this.economyManager = new EconomyManagerImpl();
-        this.economyManager.load(config.getConfigurationSection("economy"), this.playerDataManager, getLogger());
-
-
+        this.economyManager.load(config.getConfigurationSection("economy"), playerDataManager, getLogger(), messenger);
 
         this.placeholder = new AiOHook(this);
         this.placeholder.register();

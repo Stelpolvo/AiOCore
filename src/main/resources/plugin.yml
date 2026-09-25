@@ -1,5 +1,5 @@
 name: AiOCore
-version: '{version}'
+version: '${project.version}'
 authors: ["Stelpolvo"]
 main: com.github.stelpolvo.aiocore.AiOCore
 api-version: '1.18'
@@ -12,12 +12,39 @@ commands:
     usage: /aio help
     aliases:
       - a
-
 permissions:
   aio.admin:
     default: op
     children:
       aio.def: true
-      aio.admin: true
+      aio.admin.economy: true
+  aio.def:
+    default: true
+    children:
+      aio.def.economy: true
+  aio.def.economy:
+    default: true
+    children:
+      aio.def.economy.pay: true
+      aio.def.economy.look: true
+  aio.def.economy.pay:
+    default: true
+  aio.def.economy.look:
+    default: true
+  aio.admin.economy:
+    default: op
+    children:
+      aio.admin.economy.get: true
+      aio.admin.economy.set: true
+      aio.admin.economy.take: true
+      aio.admin.economy.give: true
+  aio.admin.economy.get:
+    default: op
+  aio.admin.economy.set:
+    default: op
+  aio.admin.economy.take:
+    default: op
+  aio.admin.economy.give:
+    default: op
   aio.def.money:
     default: true

@@ -1,5 +1,6 @@
 package com.github.stelpolvo.aiocore.data;
 
+import com.github.stelpolvo.aiocore.api.Messenger;
 import com.github.stelpolvo.aiocore.api.PlayerDataManager;
 import com.github.stelpolvo.aiocore.api.data.EconomyData;
 import com.github.stelpolvo.aiocore.api.data.PlayerData;
@@ -8,7 +9,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,27 +22,29 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class YamlPlayerDataManager implements PlayerDataManager {
+public class YamlPlayerDataManager implements PlayerDataManager{
     private final File dataFolder;
     private final Map<UUID, PlayerData> playerDataMap = new HashMap<>();
     private final Logger logger;
+    private final Messenger messenger;
 
-    public YamlPlayerDataManager(File dataFolder, Logger logger) {
+    public YamlPlayerDataManager(File dataFolder, Logger logger, Messenger messenger) {
         this.dataFolder = dataFolder;
         this.logger = logger;
+        this.messenger = messenger;
     }
 
     @Override
     public PlayerData getByName(String playerName) {
         OfflinePlayer player = Bukkit.getOfflinePlayer(playerName);
         if (player.hasPlayedBefore()) {
-            return getUUID(player.getUniqueId());
+            return getByUUID(player.getUniqueId());
         }
         return null;
     }
 
     @Override
-    public PlayerData getUUID(UUID uuid) {
+    public PlayerData getByUUID(UUID uuid) {
         PlayerData playerData = playerDataMap.get(uuid);
         if (playerData == null) {
             File dataFile = FileUtil.createIfNotExists(new File(dataFolder, uuid.toString() + ".yml"), false);
@@ -54,10 +60,21 @@ public class YamlPlayerDataManager implements PlayerDataManager {
         return playerDataMap;
     }
 
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        getByUUID(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        save(getByUUID(event.getPlayer().getUniqueId()));
+    }
+
     @Override
     public void save(PlayerData playerData) {
         if (playerData == null) {
             logger.log(Level.SEVERE, "Player data is null!");
+            return;
         }
         if (playerData instanceof YamlPlayerData yamlPlayerData) {
             File file = new File(dataFolder, yamlPlayerData.uuid.toString() + ".yml");
@@ -76,6 +93,7 @@ public class YamlPlayerDataManager implements PlayerDataManager {
     @Override
     public void saveAll(){
         playerDataMap.values().forEach(this::save);
+        this.messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_SAVE_DATA);
     }
 
     public static class YamlPlayerData implements PlayerData {

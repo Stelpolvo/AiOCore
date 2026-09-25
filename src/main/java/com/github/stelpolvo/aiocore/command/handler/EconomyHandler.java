@@ -104,14 +104,25 @@ public class EconomyHandler implements CommandAPI {
             messenger.send(player, Messenger.ECONOMY_INVALID_RECEIVER);
             return true;
         }
-        EconomyManager.AiOEconomy eco = economy.getAiOEconomy(args[3]);
+        String currency = args[3];
+        EconomyManager.AiOEconomy eco = economy.getAiOEconomy(currency);
         if (eco == null){
             messenger.send(player, Messenger.ECONOMY_INVALID_CURRENCY);
             return true;
         }
         double amount = Double.parseDouble(args[4]);
-        if (!eco.getEconomy().has(player, amount)) {
+        if (amount < 0){
+            messenger.send(player, Messenger.ECONOMY_AMOUNT_TOO_SMALL);
+            return true;
+        }
+        EconomyData payerData = manager.getByUUID(player.getUniqueId()).getEconomyData();
+        EconomyData receiverData = manager.getByUUID(offlinePlayer.getUniqueId()).getEconomyData();
+        if (!(payerData.get(currency) < amount)) {
             messenger.send(player, Messenger.ECONOMY_INSUFFICIENT_FUNDS);
+            return true;
+        }
+        if ((receiverData.get(currency) + amount) > Double.MAX_VALUE)  {
+            messenger.send(player, Messenger.ECONOMY_AMOUNT_TOO_LARGE);
             return true;
         }
         if (eco.isTransferable()) {
@@ -121,7 +132,7 @@ public class EconomyHandler implements CommandAPI {
             receiver.getEconomyData().set(args[3], receiver.getEconomyData().get(args[3]) + amount);
             messenger.send(player, Messenger.ECONOMY_SUCCESS_SENDER, "receiver", offlinePlayer.getName(), "amount", eco.getEconomy().format(amount), "currency", eco.getEconomy().currencyNamePlural());
             if (offlinePlayer.isOnline() && offlinePlayer instanceof Player r){
-                messenger.send(r, Messenger.ECONOMY_SUCCESS_SENDER, "sender", r.getName(), "amount", eco.getEconomy().format(amount), "currency", eco.getEconomy().currencyNamePlural());
+                messenger.send(r, Messenger.ECONOMY_SUCCESS_RECEIVER, "sender", r.getName(), "amount", eco.getEconomy().format(amount), "currency", eco.getEconomy().currencyNamePlural());
             }
         }else {
             messenger.send(player, Messenger.ECONOMY_DISABLED);
@@ -149,6 +160,10 @@ public class EconomyHandler implements CommandAPI {
         return true;
     }
     public boolean get(CommandSender sender, String[] args){
+        if (args.length < 4){
+            sendUsage(sender);
+            return true;
+        }
         OfflinePlayer offlinePlayer = getOfflinePlayer(args[2]);
         if (offlinePlayer == null){
             messenger.send(sender, Messenger.ECONOMY_INVALID_RECEIVER);
@@ -159,7 +174,12 @@ public class EconomyHandler implements CommandAPI {
             messenger.send(sender, Messenger.ECONOMY_INVALID_CURRENCY);
             return true;
         }
-        messenger.send(sender, Messenger.ECONOMY_GET, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().currencyNamePlural());
+        messenger.send(
+                sender,
+                Messenger.ECONOMY_GET,
+                "player", offlinePlayer.getName(),
+                "currency", eco.getEconomy().currencyNamePlural(),
+                "amount", eco.getEconomy().format(eco.getEconomy().getBalance(offlinePlayer)));
         return true;
     }
     public boolean set(CommandSender sender, String[] args){
@@ -199,8 +219,14 @@ public class EconomyHandler implements CommandAPI {
             return true;
         }
         EconomyData data = manager.getByName(offlinePlayer.getName()).getEconomyData();
-        data.set(args[3], data.get(args[3]) - Double.parseDouble(args[4]));
-        messenger.send(sender, Messenger.ECONOMY_TAKE, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(data.get(args[3])));
+        double take = Double.parseDouble(args[4]);
+        double has = data.get(args[3]);
+        if (take > has){
+            take = has;
+        }
+        data.set(args[3], Math.max(0, data.get(args[3]) - take));
+        messenger.send(sender, Messenger.ECONOMY_TAKE, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(take));
+
         return true;
     }
     public boolean give(CommandSender sender, String[] args){

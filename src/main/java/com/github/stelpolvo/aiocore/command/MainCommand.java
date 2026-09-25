@@ -16,12 +16,14 @@ public class MainCommand implements TabExecutor {
     private final Map<String, CommandAPI> commands = new HashMap<>();
     private AiO aio;
     public static void init(AiO instance){
-        PluginCommand command = instance.getJavaPlugin().getCommand("sealevel");
+        PluginCommand command = instance.getJavaPlugin().getCommand("aio");
         MainCommand main = new MainCommand();
         Objects.requireNonNull(command).setExecutor(main);
         command.setTabCompleter(main);
         main.aio = instance;
-        main.commands.put("money", new EconomyHandler(instance.getEconomyManager(), instance.getPlayerDataManager(), instance.getMessenger(), instance.getJavaPlugin().getLogger()));
+        if (instance.getEconomyManager().isEnabled()){
+            main.commands.put("money", new EconomyHandler(instance.getEconomyManager(), instance.getPlayerDataManager(), instance.getMessenger(), instance.getJavaPlugin().getLogger()));
+        }
     }
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
@@ -40,7 +42,10 @@ public class MainCommand implements TabExecutor {
 
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
         CommandAPI api;
-        if (args.length >= 1 && (api = commands.get(args[0])) != null) {
+        if (args.length == 1) {
+            return commands.keySet().stream().filter(s -> s.contains(args[0])).toList();
+        }
+        if (args.length > 1 && (api = commands.get(args[0])) != null) {
             if (sender instanceof Player) {
                 return api.onPlayerTab((Player) sender, args);
             }else {

@@ -9,21 +9,18 @@ public interface Messenger {
     String SUBCOMMAND_NOT_FOUND = "subcommand-not-found";
     String NUMBER_FORMAT_EXCEPTION = "number-format-exception";
     String IS_PLAYER_COMMAND = "is-player-command";
+    String SUCCESS_SAVE_DATA = "success-save-data";
+    String SUCCESS_LOAD_ECONOMY = "success-load-economy";
 
     String ECONOMY_SUCCESS_SENDER        = "success-sender";
     String ECONOMY_SUCCESS_RECEIVER      = "success-receiver";
     String ECONOMY_DISABLED              = "disabled";
     String ECONOMY_INVALID_CURRENCY      = "invalid-currency";
     String ECONOMY_INVALID_RECEIVER      = "invalid-receiver";
-    String ECONOMY_SELF_TRANSFER         = "self-transfer";
     String ECONOMY_AMOUNT_TOO_SMALL      = "amount-too-small";
-    String ECONOMY_INVALID_AMOUNT        = "invalid-amount";
+    String ECONOMY_AMOUNT_TOO_LARGE      = "amount-too-large";
     String ECONOMY_INSUFFICIENT_FUNDS    = "insufficient-funds";
-    String ECONOMY_WITHDRAW_FAILED       = "withdraw-failed";
-    String ECONOMY_DEPOSIT_FAILED        = "deposit-failed";
-    String ECONOMY_USAGE_PAY             = "usage-pay";
-    String ECONOMY_USAGE_LOOK            = "usage-look";
-    String ECONOMY_NO_CURRENCIES         = "no-currencies";
+    String ECONOMY_ENABLE_VAULT = "enable-vault";
     String ECONOMY_LOOK = "look";
     String ECONOMY_GET = "get";
     String ECONOMY_SET = "set";
