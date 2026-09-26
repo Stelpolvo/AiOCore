@@ -25,6 +25,10 @@ public interface AiO {
         return null;
     }
 
+    default ChatManager getChatManager() {
+        return null;
+    }
+
     default PlayerDataManager getPlayerDataManager(){ return null; }
 
     default PanelManager getPanelManager() {

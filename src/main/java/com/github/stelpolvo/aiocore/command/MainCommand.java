@@ -2,6 +2,7 @@ package com.github.stelpolvo.aiocore.command;
 
 import com.github.stelpolvo.aiocore.api.AiO;
 import com.github.stelpolvo.aiocore.api.Messenger;
+import com.github.stelpolvo.aiocore.command.handler.ChatHandler;
 import com.github.stelpolvo.aiocore.command.handler.EconomyHandler;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -15,14 +16,17 @@ import java.util.*;
 public class MainCommand implements TabExecutor {
     private final Map<String, CommandAPI> commands = new HashMap<>();
     private AiO aio;
-    public static void init(AiO instance){
-        PluginCommand command = instance.getJavaPlugin().getCommand("aio");
+    public static void init(AiO inst){
+        PluginCommand command = inst.getJavaPlugin().getCommand("aio");
         MainCommand main = new MainCommand();
         Objects.requireNonNull(command).setExecutor(main);
         command.setTabCompleter(main);
-        main.aio = instance;
-        if (instance.getEconomyManager().isEnabled()){
-            main.commands.put("money", new EconomyHandler(instance.getEconomyManager(), instance.getPlayerDataManager(), instance.getMessenger(), instance.getJavaPlugin().getLogger()));
+        main.aio = inst;
+        if (inst.getEconomyManager().isEnabled()){
+            main.commands.put("money", new EconomyHandler(inst.getEconomyManager(), inst.getPlayerDataManager(), inst.getMessenger(), inst.getJavaPlugin().getLogger()));
+        }
+        if (inst.getChatManager().isEnabled()){
+            main.commands.put("chat", new ChatHandler(inst.getMessenger(), inst.getChatManager(), inst.getPlayerDataManager()));
         }
     }
 

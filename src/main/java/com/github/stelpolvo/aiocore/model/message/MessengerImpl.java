@@ -44,6 +44,16 @@ public class MessengerImpl implements Messenger {
             });
         }
 
+        ConfigurationSection chatSec = config.getConfigurationSection("chat.messages");
+        if (chatSec != null) {
+            chatSec.getKeys(false).forEach(k -> {
+                String value = chatSec.getString(k);
+                if (value != null) {
+                    messages.put(k, value);
+                }
+            });
+        }
+
     }
 
     @Override

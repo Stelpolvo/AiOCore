@@ -10,6 +10,8 @@ settings:
     is-player-command: "&c该命令仅玩家可执行"
     success-save-data: "&a✔ &f玩家数据已保存"
     success-load-economy: "&a✔ &f已加载经济货币 &e{currency}"
+    player-not-exist: "这个玩家不存在"
+    player-not-online: "这个玩家不在线"
 
 economy:
   # 是否启用经济系统
@@ -58,3 +60,49 @@ economy:
     amount-too-large:    "&c✖ &f转账金额过大"
     insufficient-funds:  "&c✖ &f余额不足"
     receiver-max-balance: "&c✖ &f对方余额已达上限，无法接收"
+
+chat:
+  enabled: true
+  channels:
+    default:
+      permission: "aio.chat.channel.def"
+      name: "默认频道"
+  cross-server:
+    enabled: true
+    # REDIS or PLUGIN_MESSAGE
+    type: "PLUGIN_MESSAGE"
+    server-id: "survival-1" # 本服标识
+    redis:
+      host: "127.0.0.1"
+      port: 6379
+      password: ""
+    channels:
+      - "default"
+  messages:
+    style-not-exist: "没有这个样式"
+    style-not-permission: "没有选择这个样式的权限: {permission}"
+    style-display: "样式展示"
+    style-display-line: "效果: {effect} &f权限点: {permission}"
+    success-set-style: "样式设置成功: {style}"
+  styles:
+    name:
+      default:
+        permission: "aio.chat.style.name.def"
+        color: ["FFFFFF"]
+    message:
+      default:
+        permission: "aio.chat.style.message.def"
+        color: ["AA00AA", "00FFFF"]
+    chat:
+      default:
+        permission: "aio.chat.style.chat.def"
+        format: "&d✦ &f%name% &d➜ &f%message%"
+    sound:
+      default:
+        permission: "aio.chat.style.sound.def"
+        # sound-key;volume;pitch
+        sound: "ENTITY_ITEM_PICKUP;1;1"
+
+
+
+

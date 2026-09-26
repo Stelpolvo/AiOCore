@@ -11,6 +11,8 @@ public interface Messenger {
     String IS_PLAYER_COMMAND = "is-player-command";
     String SUCCESS_SAVE_DATA = "success-save-data";
     String SUCCESS_LOAD_ECONOMY = "success-load-economy";
+    String PLAYER_NOT_EXIST = "player-not-exist";
+    String PLAYER_NOT_ONLINE = "player-not-online";
 
     String ECONOMY_SUCCESS_SENDER        = "success-sender";
     String ECONOMY_SUCCESS_RECEIVER      = "success-receiver";
@@ -26,6 +28,13 @@ public interface Messenger {
     String ECONOMY_SET = "set";
     String ECONOMY_TAKE = "take";
     String ECONOMY_GIVE = "give";
+
+    String CHAT_STYLE_NOT_EXIST = "style-not-exist";
+    String CHAT_STYLE_NOT_PERMISSION = "style-not-permission";
+    String CHAT_SUCCESS_SET_STYLE = "success-set-style";
+    String CHAT_STYLE_DISPLAY = "style-display";
+    String CHAT_STYLE_DISPLAY_LINE = "style-display-line";
+
     void send(CommandSender sender, String msg);
     boolean send(CommandSender sender, String key, Object... keyValues);
     void load(YamlConfiguration config);

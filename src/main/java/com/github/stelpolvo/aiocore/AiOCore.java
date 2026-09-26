@@ -3,6 +3,7 @@ package com.github.stelpolvo.aiocore;
 import com.github.stelpolvo.aiocore.api.*;
 import com.github.stelpolvo.aiocore.command.MainCommand;
 import com.github.stelpolvo.aiocore.data.YamlPlayerDataManager;
+import com.github.stelpolvo.aiocore.model.chat.ChatManagerImpl;
 import com.github.stelpolvo.aiocore.model.economy.EconomyManagerImpl;
 import com.github.stelpolvo.aiocore.model.message.MessengerImpl;
 import com.github.stelpolvo.aiocore.model.placeholder.AiOHook;
@@ -24,6 +25,7 @@ import java.io.File;
 public final class AiOCore extends JavaPlugin implements AiO {
     private PlaceholderExpansion placeholder;
     private EconomyManager economyManager;
+    private ChatManager chatManager;
     private PlayerDataManager playerDataManager;
     private Messenger messenger;
 
@@ -59,6 +61,9 @@ public final class AiOCore extends JavaPlugin implements AiO {
         // economy
         this.economyManager = new EconomyManagerImpl();
         this.economyManager.load(config.getConfigurationSection("economy"), playerDataManager, getLogger(), messenger);
+        // chat
+        this.chatManager = new ChatManagerImpl(this.playerDataManager, config.getConfigurationSection("chat"));
+        Bukkit.getPluginManager().registerEvents(this.chatManager, this);
 
         this.placeholder = new AiOHook(this);
         this.placeholder.register();
@@ -72,29 +77,7 @@ public final class AiOCore extends JavaPlugin implements AiO {
                 saveData();
             }
         }.runTaskTimer(this, updateDuration, updateDuration);
-        new PlaceholderExpansion(){
-
-            public @NotNull String getIdentifier() {
-                return "aio";
-            }
-
-            public @NotNull String getAuthor() {
-                return "Stelpolvo";
-            }
-
-            public @NotNull String getVersion() {
-                return AiOCore.this.getDescription().getVersion();
-            }
-
-            @Override
-            public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
-                String[] split = params.split("_");
-                return switch (split[0]){
-                    case "economy" -> split.length >= 2 ? economyManager.onPlaceholderRequest(player, split) : "error";
-                    default -> throw new IllegalStateException("Unexpected value: " + split[0]);
-                };
-            }
-        };
+        new AiOHook(this).register();
     }
 
     @Override
@@ -128,6 +111,11 @@ public final class AiOCore extends JavaPlugin implements AiO {
     @Override
     public EconomyManager getEconomyManager() {
         return this.economyManager;
+    }
+
+    @Override
+    public ChatManager getChatManager() {
+        return this.chatManager;
     }
 
     @Override

@@ -28,12 +28,12 @@ import java.util.logging.Logger;
  */
 public class EconomyHandler implements CommandAPI {
     public static final Map<String, String> PERM_MAP = ImmutableMap.of(
-            "pay", "aio.def.economy.pay",
-            "look", "aio.def.economy.look",
-            "get", "aio.admin.economy.get",
-            "set", "aio.admin.economy.set",
-            "take", "aio.admin.economy.take",
-            "give", "aio.admin.economy.give"
+            "pay", "aio.command.def.economy.pay",
+            "look", "aio.command.def.economy.look",
+            "get", "aio.command.admin.economy.get",
+            "set", "aio.command.admin.economy.set",
+            "take", "aio.command.admin.economy.take",
+            "give", "aio.command.admin.economy.give"
     );
 
     public static final List<String> AMOUNT_LIST = ImmutableList.of("1", "10", "100", "1000", "10000");

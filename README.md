@@ -27,7 +27,6 @@ AiOCore is under active personal development. Planned modules:
 
 - [ ] **Chat** — channels, formatting, filters
 - [ ] **Menus / GUIs** — a declarative, config-driven menu system
-- [ ] Additional economy hooks and data backends
 
 ## 📦 Requirements
 

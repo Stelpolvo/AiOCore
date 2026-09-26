@@ -6,7 +6,7 @@
 
     <groupId>com.github.stelpolvo.aiocore</groupId>
     <artifactId>AiOCore</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.2.0-alpha.1</version>
     <packaging>jar</packaging>
 
     <name>AiOCore</name>

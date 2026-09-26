@@ -13,38 +13,55 @@ commands:
     aliases:
       - a
 permissions:
-  aio.admin:
+  aio.command.admin:
     default: op
     children:
-      aio.def: true
-      aio.admin.economy: true
-  aio.def:
+      aio.command.def: true
+      aio.command.admin.economy: true
+  aio.command.def:
     default: true
     children:
-      aio.def.economy: true
-  aio.def.economy:
+      aio.command.def.economy: true
+      aio.command.def.chat: true
+  aio.command.def.economy:
     default: true
     children:
-      aio.def.economy.pay: true
-      aio.def.economy.look: true
-  aio.def.economy.pay:
+      aio.command.def.economy.pay: true
+      aio.command.def.economy.look: true
+  aio.command.def.economy.pay:
     default: true
-  aio.def.economy.look:
+  aio.command.def.economy.look:
     default: true
-  aio.admin.economy:
+  aio.command.admin.economy:
     default: op
     children:
-      aio.admin.economy.get: true
-      aio.admin.economy.set: true
-      aio.admin.economy.take: true
-      aio.admin.economy.give: true
-  aio.admin.economy.get:
+      aio.command.admin.economy.get: true
+      aio.command.admin.economy.set: true
+      aio.command.admin.economy.take: true
+      aio.command.admin.economy.give: true
+  aio.command.admin.economy.get:
     default: op
-  aio.admin.economy.set:
+  aio.command.admin.economy.set:
     default: op
-  aio.admin.economy.take:
+  aio.command.admin.economy.take:
     default: op
-  aio.admin.economy.give:
+  aio.command.admin.economy.give:
     default: op
   aio.def.money:
+    default: true
+
+  aio.command.def.chat:
+    default: true
+    children:
+      aio.command.def.chat.name: true
+      aio.command.def.chat.message: true
+      aio.command.def.chat.chat: true
+      aio.command.def.chat.sound: true
+  aio.command.def.chat.name:
+    default: true
+  aio.command.def.chat.message:
+    default: true
+  aio.command.def.chat.chat:
+    default: true
+  aio.command.def.chat.sound:
     default: true

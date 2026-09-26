@@ -1,16 +1,20 @@
 package com.github.stelpolvo.aiocore.data;
 
+import com.github.stelpolvo.aiocore.api.ChatManager;
 import com.github.stelpolvo.aiocore.api.Messenger;
 import com.github.stelpolvo.aiocore.api.PlayerDataManager;
+import com.github.stelpolvo.aiocore.api.data.ChatData;
 import com.github.stelpolvo.aiocore.api.data.EconomyData;
 import com.github.stelpolvo.aiocore.api.data.PlayerData;
+import com.github.stelpolvo.aiocore.model.chat.ChatDataImpl;
+import com.github.stelpolvo.aiocore.model.economy.EconomyDataImpl;
 import com.github.stelpolvo.aiocore.utils.FileUtil;
+import com.google.common.collect.ImmutableMap;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -22,7 +26,7 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class YamlPlayerDataManager implements PlayerDataManager{
+public class YamlPlayerDataManager implements PlayerDataManager {
     private final File dataFolder;
     private final Map<UUID, PlayerData> playerDataMap = new HashMap<>();
     private final Logger logger;
@@ -77,11 +81,25 @@ public class YamlPlayerDataManager implements PlayerDataManager{
             return;
         }
         if (playerData instanceof YamlPlayerData yamlPlayerData) {
-            File file = new File(dataFolder, yamlPlayerData.uuid.toString() + ".yml");
+            File file = FileUtil.createIfNotExists(new File(dataFolder, yamlPlayerData.uuid.toString() + ".yml"), false);
             try {
-                YamlConfiguration dataYaml = new YamlConfiguration();
-                dataYaml.set("economy", playerData.getEconomyData().get());
-                dataYaml.save(file);
+                YamlConfiguration dataYaml = YamlConfiguration.loadConfiguration(file);
+                boolean update = false;
+                if (!playerData.getEconomyData().isCurrent()) {
+                    dataYaml.set("economy", playerData.getEconomyData().get());
+                    update = true;
+                }
+                ChatData chatData = playerData.getChatData();
+                if (!chatData.isCurrent()) {
+                    dataYaml.set("chat.name", chatData.getNameStyle());
+                    dataYaml.set("chat.message", chatData.getMessageStyle());
+                    dataYaml.set("chat.chat", chatData.getChatStyle());
+                    dataYaml.set("chat.sound", chatData.getSoundStyle());
+                    update = true;
+                }
+                if (update) {
+                    dataYaml.save(file);
+                }
             } catch (IOException e) {
                 logger.log(Level.SEVERE, "Failed to save player data", e);
             }
@@ -99,6 +117,7 @@ public class YamlPlayerDataManager implements PlayerDataManager{
     public static class YamlPlayerData implements PlayerData {
         protected final UUID uuid;
         protected EconomyData economyData;
+        protected ChatData chatData;
         public YamlPlayerData(YamlConfiguration data, UUID uuid) {
             this.uuid = uuid;
             ConfigurationSection ecoSection = data.getConfigurationSection("economy");
@@ -106,11 +125,24 @@ public class YamlPlayerDataManager implements PlayerDataManager{
             if (ecoSection != null) {
                 ecoSection.getKeys(false).forEach(k -> economyMap.put(k, ecoSection.getDouble(k)));
             }
-            this.economyData = new EconomyData(economyMap);
+            this.economyData = new EconomyDataImpl(economyMap);
+            ConfigurationSection chatSection = data.getConfigurationSection("chat");
+            if (chatSection != null) {
+                this.chatData = new ChatDataImpl(
+                        chatSection.getString("name", ChatData.DEFAULT_KEY),
+                        chatSection.getString("message", ChatData.DEFAULT_KEY),
+                        chatSection.getString("chat", ChatData.DEFAULT_KEY),
+                        chatSection.getString("sound", ChatData.DEFAULT_KEY)
+                );
+            }
         }
 
         public EconomyData getEconomyData() {
             return this.economyData;
+        }
+
+        public ChatData getChatData() {
+            return this.chatData;
         }
     }
 }
