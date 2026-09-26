@@ -96,7 +96,7 @@ chat:
     chat:
       default:
         permission: "aio.chat.style.chat.def"
-        format: "&d✦ &f%name% &d➜ &f%message%"
+        format: "&d✦ &f%player% &d➜ &f%message%"
     sound:
       default:
         permission: "aio.chat.style.sound.def"

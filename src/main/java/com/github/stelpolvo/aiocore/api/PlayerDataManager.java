@@ -19,7 +19,7 @@ public interface PlayerDataManager extends Listener {
         throw new RuntimeException("Not implemented");
     }
 
-    default void save(PlayerData data) {
+    default boolean save(PlayerData data) {
         throw new RuntimeException("Not implemented");
     }
 

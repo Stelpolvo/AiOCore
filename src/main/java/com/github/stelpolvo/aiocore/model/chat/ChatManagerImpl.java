@@ -74,7 +74,8 @@ public class ChatManagerImpl implements ChatManager {
         if (chatKey != null){
             ChatStyle style = chatStylesMap.get(chatKey);
             if (style != null){
-                bcMessage = style.parse(player, bcMessage).replaceAll("%player%", coloredName).replaceAll("%message%", coloredMessage);
+                bcMessage = style.format();
+                bcMessage = style.parse(player, bcMessage).replaceAll("%player%", coloredName).replaceAll("%message%", coloredMessage).replaceAll("&", "§");
                 successParse = true;
             }
         }

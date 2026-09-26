@@ -1,6 +1,5 @@
 package com.github.stelpolvo.aiocore.data;
 
-import com.github.stelpolvo.aiocore.api.ChatManager;
 import com.github.stelpolvo.aiocore.api.Messenger;
 import com.github.stelpolvo.aiocore.api.PlayerDataManager;
 import com.github.stelpolvo.aiocore.api.data.ChatData;
@@ -9,7 +8,6 @@ import com.github.stelpolvo.aiocore.api.data.PlayerData;
 import com.github.stelpolvo.aiocore.model.chat.ChatDataImpl;
 import com.github.stelpolvo.aiocore.model.economy.EconomyDataImpl;
 import com.github.stelpolvo.aiocore.utils.FileUtil;
-import com.google.common.collect.ImmutableMap;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
@@ -23,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +35,7 @@ public class YamlPlayerDataManager implements PlayerDataManager {
         this.dataFolder = dataFolder;
         this.logger = logger;
         this.messenger = messenger;
+        Bukkit.getOnlinePlayers().forEach(player -> getByUUID(player.getUniqueId()));
     }
 
     @Override
@@ -75,16 +75,17 @@ public class YamlPlayerDataManager implements PlayerDataManager {
     }
 
     @Override
-    public void save(PlayerData playerData) {
+    public boolean save(PlayerData playerData) {
         if (playerData == null) {
             logger.log(Level.SEVERE, "Player data is null!");
-            return;
+            return false;
         }
+        boolean update = false;
         if (playerData instanceof YamlPlayerData yamlPlayerData) {
             File file = FileUtil.createIfNotExists(new File(dataFolder, yamlPlayerData.uuid.toString() + ".yml"), false);
             try {
                 YamlConfiguration dataYaml = YamlConfiguration.loadConfiguration(file);
-                boolean update = false;
+
                 if (!playerData.getEconomyData().isCurrent()) {
                     dataYaml.set("economy", playerData.getEconomyData().get());
                     update = true;
@@ -106,12 +107,23 @@ public class YamlPlayerDataManager implements PlayerDataManager {
         }else {
             logger.log(Level.SEVERE, "Player data is not a YamlPlayerData!");
         }
+        return update;
     }
 
     @Override
     public void saveAll(){
-        playerDataMap.values().forEach(this::save);
-        this.messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_SAVE_DATA);
+        if (!playerDataMap.isEmpty()){
+            AtomicBoolean isSaved = new AtomicBoolean(false);
+            playerDataMap.values().forEach(data -> {
+                if (!isSaved.get()) {
+                    isSaved.set(save(data));
+                }
+            });
+            if (isSaved.get()){
+                this.messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_SAVE_DATA);
+            }
+        }
+
     }
 
     public static class YamlPlayerData implements PlayerData {
@@ -127,12 +139,20 @@ public class YamlPlayerDataManager implements PlayerDataManager {
             }
             this.economyData = new EconomyDataImpl(economyMap);
             ConfigurationSection chatSection = data.getConfigurationSection("chat");
+            System.out.println(chatSection);
             if (chatSection != null) {
                 this.chatData = new ChatDataImpl(
                         chatSection.getString("name", ChatData.DEFAULT_KEY),
                         chatSection.getString("message", ChatData.DEFAULT_KEY),
                         chatSection.getString("chat", ChatData.DEFAULT_KEY),
                         chatSection.getString("sound", ChatData.DEFAULT_KEY)
+                );
+            }else {
+                this.chatData = new ChatDataImpl(
+                        ChatData.DEFAULT_KEY,
+                        ChatData.DEFAULT_KEY,
+                        ChatData.DEFAULT_KEY,
+                        ChatData.DEFAULT_KEY
                 );
             }
         }

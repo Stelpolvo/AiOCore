@@ -55,19 +55,19 @@ public class ChatHandler implements CommandAPI {
             case "name":
                 messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY);
                 chatManager.getNameStyles().forEach((key, value) -> {
-                    messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY_LINE, "{effect}", value.parse(sender, "player_name"), "permission", value.permission());
+                    messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY_LINE, "effect", value.parse(sender, "player_name"), "permission", value.permission());
                 });
                 break;
             case "message":
                 messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY);
                 chatManager.getMessageStyles().forEach((key, value) -> {
-                    messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY_LINE, "{effect}", value.parse(sender, "player_name"), "permission", value.permission());
+                    messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY_LINE, "effect", value.parse(sender, "player_name"), "permission", value.permission());
                 });
                 break;
             case "chat":
                 messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY);
                 chatManager.getChatStyles().forEach((key, value) -> {
-                    messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY_LINE, "{effect}", value.parse(sender, "player_name"), "permission", value.permission());
+                    messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY_LINE, "effect", value.parse(sender, "player_name"), "permission", value.permission());
                 });
                 break;
             default:
