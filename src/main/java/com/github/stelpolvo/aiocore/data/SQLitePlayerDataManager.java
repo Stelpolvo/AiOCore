@@ -80,16 +80,17 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
             logger.log(Level.SEVERE, "Failed to initialize aio table", e);
         }
         Bukkit.getOnlinePlayers().stream().forEach(player -> {
-            onPlayerJoin(new PlayerJoinEvent(player, ""));
+            onJoin(player.getUniqueId(), player.getName());
         });
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-        String name = player.getName();
+        onJoin(player.getUniqueId(), player.getName());
+    }
 
+    private void onJoin(UUID uuid, String name) {
         playerRecordMap.put(name, uuid);
 
         if (playerDataMap.containsKey(uuid)) {
@@ -390,9 +391,7 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
                     d.getChatData().setInit(false);
                 });
                 if (isSuccess){
-                    logger.log(Level.INFO, String.format(
-                            "Saved all player data in %d ms",
-                            (System.nanoTime() - start) / 1_000_000));
+                    this.messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_SAVE_DATA, "time",(System.nanoTime() - start) / 1_000_000);
                 }
             }
         }

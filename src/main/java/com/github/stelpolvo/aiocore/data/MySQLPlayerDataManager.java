@@ -374,9 +374,7 @@ public class MySQLPlayerDataManager extends SQLPlayerDataManager {
                     d.getChatData().setInit(false);
                 });
                 if (isSuccess){
-                    logger.log(Level.INFO, String.format(
-                            "Saved all player data in %d ms",
-                            (System.nanoTime() - start) / 1_000_000));
+                    this.messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_SAVE_DATA, "time",(System.nanoTime() - start) / 1_000_000);
                 }
             }
         }

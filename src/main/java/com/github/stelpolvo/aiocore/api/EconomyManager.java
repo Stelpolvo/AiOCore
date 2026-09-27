@@ -36,6 +36,8 @@ public interface EconomyManager extends Placeholder{
 
         String getCurrencyKey();
 
+        String getDisplayName();
+
         String getSymbol();
 
         String getFormat();

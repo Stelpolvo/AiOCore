@@ -1,94 +1,164 @@
 # AiOCore
 
-> A personal, all-in-one Bukkit plugin for Minecraft **1.18 through the latest version**.
+> A personal, all-in-one Bukkit plugin for **Minecraft 1.18 through the current release**.
 
-AiOCore is designed to be a lightweight, modular foundation for survival and
-small-to-medium servers. Instead of installing a pile of separate plugins,
-AiOCore aims to provide a unified set of core features under one roof.
+AiOCore is a lightweight, modular core for survival and small-to-medium servers.
+Instead of installing a pile of separate plugins, it provides a multi-currency
+economy, a fully styleable chat system and pluggable player-data storage behind a
+single `/aio` command and a small developer API.
 
-## ✨ Current Features
+---
 
-### 💰 Multi-Currency Economy
-- Define unlimited currencies in `settings.yml` (e.g. `金币`, `点券`)
-- Fully compatible with **Vault** — any Vault-aware plugin can use it
-- Player-to-player transfer with per-currency toggles
+## 🧭 Compatibility
+
+| | |
+| --- | --- |
+| **Minecraft** | **1.18 – 26.x** (Spigot, Paper and forks) |
+| **Java** | **17 or newer** (required) |
+| **`api-version`** | `1.18` |
+
+### Upward compatibility
+
+AiOCore uses a conservative Bukkit API surface and is intended to keep working
+on Spigot/Paper 1.18 and the current release line.
+
+## ✨ Features
+
+### 💰 Multi-currency economy
+- Unlimited currencies defined in `config.yml` (`金币`, `点券`, …)
+- Full **Vault** integration: the currency named in `economy.vault` is registered
+  as a Vault `Economy` service, so any Vault-aware plugin can use it
+- Player-to-player transfers with a per-currency `transferable` switch
 - Admin commands: `get` / `set` / `give` / `take`
-- Per-currency formatting, symbols, and decimal precision
-- Persistent player data with configurable auto-save interval
+- Per-currency singular/plural names, fractional digits, format and symbol
 
-### 💬 Chat System
-- **Channels** — define unlimited chat channels, each with its own permission and prefix
-  - Per-player channel selection, persisted across sessions
-  - Tab-completion for channel names
-- **Custom Styles** — four independent style categories that can be freely combined:
-  - **Name style** — gradient colors for player names
-  - **Message style** — gradient colors for message content
-  - **Chat style** — layout template (`%player%`, `%message%`, `%server%` placeholders)
-  - **Sound style** — per-player sound feedback on chat (`key;volume;pitch`)
-- **Cross-server Chat** — broadcast messages across servers via BungeeCord / Velocity
-  - `PLUGIN_MESSAGE` forwarding (no proxy plugin required)
-  - Echo filtering — a server's own messages are not re-broadcast locally
-- **Mute Toggle** — `/aio chat mute` to toggle chat sound on/off
-- **Style Preview** — `/aio chat <type> show` to preview all available styles
+### 💬 Chat system
+- **Channels** — unlimited channels, each with its own name and permission.
+  Messages are only rendered for players sitting in the sender's channel; the
+  per-player choice is stored in the player's data file and restored on join
+- **Four independent style categories** that combine freely
+  - *name* — gradient colours for the player name
+  - *message* — gradient colours for the message body
+  - *chat* — layout template using `%player%`, `%message%`, `%server%`
+  - *sound* — per-message sound feedback, written as `key;volume;pitch`
+- **Cross-server chat** over the `BungeeCord` plugin channel
+  (`PLUGIN_MESSAGE` forwarding, no proxy-side plugin needed) with echo
+  filtering through `server-id`
+- **Style preview** — `/aio chat <type> show` prints every style of a category
+  with the permission it needs
 
-### 🔌 PlaceholderAPI Support
-- `%aio_economy_<currency>%`, `..._formatted%`, `..._display%`, `..._symbol%`, `..._name%`
-- `%aio_economy_<currency>_player_<name>%` for querying other players
+### 🗄️ Flexible storage
+- **YAML** — one `<uuid>.yml` per player, only changed sections are written
+- **SQLite** — single-file database, zero configuration
+- **MySQL** — pooled through HikariCP for networks and multi-server setups
+- All three share one interface; switching is a one-line config change
 
-### 🗄️ Flexible Storage
-- **YAML** — simple flat-file storage, good for small servers
-- **SQLite** — single-file database, zero-config
-- **MySQL** — for networks and multi-server setups
-- All storage types share the same interface; switch by editing one config line
+### 🔌 PlaceholderAPI
+`%aio_economy_<currency>%` and its `_formatted`, `_display`, `_symbol`, `_name`
+variants, plus `%aio_economy_<currency>_player_<name>%` for other players.
 
-### ⌨️ Command Framework
-- Unified `/aio` root command with subcommand routing
-- Permission-aware tab completion
-- Console-friendly where applicable
+### 🧑‍💻 Developer API
+An `AiO` service is registered in Bukkit's `ServicesManager`, exposing the
+economy, chat, player-data and message managers to other plugins.
 
 ## 📋 Commands
+
+Root command: `/aio` (alias `/a`).
+
+> The economy sub-command is registered as **`money`**.
 
 ### Economy
 
 | Command | Permission | Description |
 | --- | --- | --- |
-| `/aio economy pay <player> <currency> <amount>` | `aio.def.economy.pay` | Transfer currency to another player |
-| `/aio economy look <currency>` | `aio.def.economy.look` | Show your own balance |
-| `/aio economy get <player> <currency>` | `aio.admin.economy.get` | Query another player's balance |
-| `/aio economy set <player> <currency> <amount>` | `aio.admin.economy.set` | Set a player's balance |
-| `/aio economy give <player> <currency> <amount>` | `aio.admin.economy.give` | Add currency to a player |
-| `/aio economy take <player> <currency> <amount>` | `aio.admin.economy.take` | Remove currency from a player |
+| `/aio money pay <player> <currency> <amount>` | `aio.command.def.economy.pay` | Transfer currency to another player (players only) |
+| `/aio money look <currency>` | `aio.command.def.economy.look` | Show your own balance (players only) |
+| `/aio money get <player> <currency>` | `aio.command.admin.economy.get` | Query another player's balance |
+| `/aio money set <player> <currency> <amount>` | `aio.command.admin.economy.set` | Set a player's balance |
+| `/aio money give <player> <currency> <amount>` | `aio.command.admin.economy.give` | Add currency to a player |
+| `/aio money take <player> <currency> <amount>` | `aio.command.admin.economy.take` | Remove currency from a player |
 
 ### Chat
 
 | Command | Permission | Description |
 | --- | --- | --- |
-| `/aio chat <type> show` | `aio.command.def.chat.<type>` | Preview all styles of a category |
-| `/aio chat <type> set <key> [player]` | `aio.command.def.chat.<type>` | Apply a style |
-| `/aio chat mute` | `aio.command.def.chat.mute` | Toggle chat sound on / off |
+| `/aio chat <type> show` | `aio.command.def.chat.<type>` | Preview every style of a category (players only) |
+| `/aio chat <type> set <key>` | `aio.command.def.chat.<type>` | Apply a style to yourself |
+| `/aio chat <type> set <key> <player>` | `aio.command.def.chat.<type>` | Apply a style to another player |
 
-`<type>` can be one of: `name`, `message`, `chat`, `sound`, `channel`.
+`<type>` is one of `name`, `message`, `chat`, `sound`, `channel`.
+
+Applying a style requires the *target player* to hold the permission attached to
+that style or channel in `config.yml` (for example `aio.chat.style.name.gold`).
+
+## 🔐 Permissions
+
+| Permission | Default | Grants |
+| --- | --- | --- |
+| `aio.command.def` | everyone | `aio.command.def.economy` + `aio.command.def.chat` |
+| `aio.command.def.economy` | everyone | `…economy.pay` + `…economy.look` |
+| `aio.command.def.economy.pay` | everyone | `/aio money pay` |
+| `aio.command.def.economy.look` | everyone | `/aio money look` |
+| `aio.command.def.chat` | everyone | the five `…chat.<type>` nodes below |
+| `aio.command.def.chat.name` | everyone | `/aio chat name …` |
+| `aio.command.def.chat.message` | everyone | `/aio chat message …` |
+| `aio.command.def.chat.chat` | everyone | `/aio chat chat …` |
+| `aio.command.def.chat.sound` | everyone | `/aio chat sound …` |
+| `aio.command.def.chat.channel` | everyone | `/aio chat channel …` |
+| `aio.command.admin` | OP | `aio.command.def` + `aio.command.admin.economy` |
+| `aio.command.admin.economy` | OP | `…economy.get` / `.set` / `.take` / `.give` |
+| `aio.command.admin.economy.get` | OP | `/aio money get` |
+| `aio.command.admin.economy.set` | OP | `/aio money set` |
+| `aio.command.admin.economy.take` | OP | `/aio money take` |
+| `aio.command.admin.economy.give` | OP | `/aio money give` |
+
+Style and channel permissions are **not** declared in `plugin.yml` — they live in
+`config.yml` (for example `aio.chat.style.name.gold`,
+`aio.chat.channel.global`). Bukkit treats an undeclared permission as `false`
+for non-operators, so grant them with a permissions plugin (LuckPerms, …)
+otherwise only OPs can pick a style.
+
+The chat command permissions above only control what appears in tab completion;
+whether a style can actually be applied is decided by that style's own
+permission from `config.yml`.
+
+## 🧩 Placeholders
+
+Identifier: `aio` (PlaceholderAPI must be installed).
+
+| Placeholder | Result |
+| --- | --- |
+| `%aio_economy_<currency>%` | Raw balance (`100.0`) |
+| `%aio_economy_<currency>_formatted%` | Balance run through the currency's `format` |
+| `%aio_economy_<currency>_display%` | `format` with `%amount%` and `%symbol%` substituted |
+| `%aio_economy_<currency>_symbol%` | The currency symbol |
+| `%aio_economy_<currency>_name%` | The plural currency name |
+| `%aio_economy_<currency>_player_<name>%` | Another player's balance (all suffixes above work) |
 
 ## ⚙️ Configuration
 
-`settings.yml` controls everything. A minimal example:
+Everything lives in `plugins/AiOCore/config.yml`. A trimmed example:
 
 ```yaml
 settings:
-  save-interval-seconds: 2
+  save-interval-seconds: 10        # flush interval for the in-memory cache (min. 1)
   storage:
-    type: "yml"           # yml / sqlite / mysql
-    url: "/data"
-    pool-size: 10
+    type: "yml"                    # yml | sqlite | mysql
+    url: "/data"                   # see the storage table below
+    pool-size: 10                  # sqlite / mysql only
     username: "admin"
     password: "admin"
+  messages:
+    prefix: "&8[&cAiOCore&8] &r"
+    no-permission: "&cYou do not have the authority to perform this operation &8(&7{permission}&8)"
 
 economy:
   enabled: true
-  vault: "金币"
+  vault: "coin"                     # which currency Vault sees
   currencies:
-    金币:
-      display-name: "金币"
+    coin:
+      name-singular: "coin"
+      name-plural: "coin"
       fractional-digits: 2
       format: "%amount%"
       symbol: "¤"
@@ -108,11 +178,11 @@ chat:
     name:
       default:
         permission: "aio.chat.style.name.def"
-        color: ["FFFFFF"]
+        color: ["FFFFFF"]          # one colour, or a gradient stop list
     message:
       default:
-        permission: "aio.chat.style.message.def"
-        color: ["AA00AA", "00FFFF"]
+        permission: "aio.chat.style.message.white"
+        color: ["FFFFFF"]
     chat:
       default:
         permission: "aio.chat.style.chat.def"
@@ -120,51 +190,4 @@ chat:
     sound:
       default:
         permission: "aio.chat.style.sound.def"
-        sound: "ENTITY_ITEM_PICKUP;1;1"
-```
-
-### Storage Backends
-
-Set `settings.storage.type` to one of:
-
-- `yml` — flat-file storage under `settings.storage.url`
-- `sqlite` — single-file DB; set `url` to a JDBC URL like `jdbc:sqlite:plugins/AiOCore/data.db`
-- `mysql` — set `url` to a MySQL JDBC URL; `username` / `password` are required
-
-For MySQL, the recommended JDBC URL parameters:
-
-```
-jdbc:mysql://127.0.0.1:3306/aio?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4&rewriteBatchedStatements=true
-```
-
-## 📦 Requirements
-
-| Requirement    | Version                     |
-| -------------- | --------------------------- |
-| Server         | Paper / Bukkit **1.18+**    |
-| Java           | 17+                         |
-| Vault          | Required for economy        |
-| PlaceholderAPI | Optional (for placeholders) |
-
-## 🔧 Building
-
-```bash
-mvn clean package
-```
-
-The output jar will be placed in `target/`. The bundled SQLite and MySQL
-drivers are declared via `plugin.yml`'s `libraries` section, so the server
-will download them on first run — no need to shade them into the jar.
-
-## 🚧 Roadmap
-
-AiOCore is under active personal development. Planned modules:
-
-- [x] Multi-currency economy
-- [x] Chat system with styles, channels and cross-server support
-- [ ] **Menus / GUIs** — a declarative, config-driven menu system
-
-## 📄 License
-
-See [LICENSE](LICENSE).
-
+        sound: "ENTITY_ITEM_PICKUP;1;1"   # <sound-key>;<volume>;<pitch>, empty = silent

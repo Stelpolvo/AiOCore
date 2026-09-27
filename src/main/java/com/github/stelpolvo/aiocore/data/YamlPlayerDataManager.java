@@ -110,6 +110,7 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
     @Override
     public void saveAll(){
         if (!playerDataMap.isEmpty()){
+            long start = System.nanoTime();
             AtomicBoolean isSaved = new AtomicBoolean(false);
             playerDataMap.values().forEach(data -> {
                 if (!isSaved.get()) {
@@ -117,7 +118,7 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
                 }
             });
             if (isSaved.get()){
-                this.messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_SAVE_DATA);
+                this.messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_SAVE_DATA, "time",(System.nanoTime() - start) / 1_000_000);
             }
         }
 
@@ -125,6 +126,10 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
 
     public void disable() {
         saveAll();
+    }
+
+    public boolean isEnabled() {
+        return dataFolder.exists();
     }
 
     public static class YamlPlayerData extends AbstractPlayerData {

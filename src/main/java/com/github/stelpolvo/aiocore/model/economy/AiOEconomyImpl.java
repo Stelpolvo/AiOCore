@@ -14,6 +14,8 @@ import java.util.List;
 public class AiOEconomyImpl extends AbstractEconomy implements EconomyManager.AiOEconomy {
     private final String currencyKey;
 
+    private final String displayName;
+
     private final String currencyNameSingular;
 
     private final String currencyNamePlural;
@@ -32,8 +34,9 @@ public class AiOEconomyImpl extends AbstractEconomy implements EconomyManager.Ai
 
     private final boolean transferable;
 
-    public AiOEconomyImpl(PlayerDataManager manager, String currencyKey, String currencyNameSingular, String currencyNamePlural, int fractionalDigits, String format, String symbol, boolean transferable) {
+    public AiOEconomyImpl(PlayerDataManager manager, String currencyKey, String displayName, String currencyNameSingular, String currencyNamePlural, int fractionalDigits, String format, String symbol, boolean transferable) {
         this.currencyKey = currencyKey;
+        this.displayName = displayName;
         this.currencyNameSingular = currencyNameSingular;
         this.currencyNamePlural = currencyNamePlural;
         this.fractionalDigits = Math.max(0, fractionalDigits);
@@ -59,6 +62,10 @@ public class AiOEconomyImpl extends AbstractEconomy implements EconomyManager.Ai
 
     public String getCurrencyKey() {
         return currencyKey;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     public boolean isTransferable() {

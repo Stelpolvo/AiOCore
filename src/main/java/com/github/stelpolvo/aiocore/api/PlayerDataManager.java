@@ -18,4 +18,6 @@ public interface PlayerDataManager extends Listener {
     void saveAll();
 
     void disable();
+
+    boolean isEnabled();
 }

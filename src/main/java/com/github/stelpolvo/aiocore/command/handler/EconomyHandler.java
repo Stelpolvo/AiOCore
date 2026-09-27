@@ -61,6 +61,10 @@ public class EconomyHandler implements CommandAPI {
     }
 
     public boolean onCommand(CommandSender sender, String[] args) {
+        if (!manager.isEnabled()){
+            messenger.send(sender, Messenger.INVALID_DATA_SOURCE);
+            return true;
+        }
         if (args.length >= 3){
             String rootArg = args[1].toLowerCase(Locale.ROOT);
             if (!(sender instanceof Player)){
@@ -100,8 +104,8 @@ public class EconomyHandler implements CommandAPI {
             sendUsage(player);
             return true;
         }
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(args[3]);
-        if (!offlinePlayer.hasPlayedBefore()){
+        PlayerData receiverData = manager.getByName(args[2]);
+        if (receiverData == null){
             messenger.send(player, Messenger.ECONOMY_INVALID_RECEIVER);
             return true;
         }
@@ -117,38 +121,28 @@ public class EconomyHandler implements CommandAPI {
             return true;
         }
         EconomyData payerData = manager.getByUUID(player.getUniqueId()).getEconomyData();
-        EconomyData receiverData = manager.getByUUID(offlinePlayer.getUniqueId()).getEconomyData();
+        EconomyData receiverEconomyData = receiverData.getEconomyData();
         if (!(payerData.get(currency) < amount)) {
             messenger.send(player, Messenger.ECONOMY_INSUFFICIENT_FUNDS);
             return true;
         }
-        if ((receiverData.get(currency) + amount) > Double.MAX_VALUE)  {
+        if ((receiverEconomyData.get(currency) + amount) > Double.MAX_VALUE)  {
             messenger.send(player, Messenger.ECONOMY_AMOUNT_TOO_LARGE);
             return true;
         }
         if (eco.isTransferable()) {
             PlayerData sender = manager.getPlayerData().get(player.getUniqueId());
-            PlayerData receiver = manager.getPlayerData().get(offlinePlayer.getUniqueId());
-            sender.getEconomyData().set(args[3], sender.getEconomyData().get(args[3]) - amount);
-            receiver.getEconomyData().set(args[3], receiver.getEconomyData().get(args[3]) + amount);
-            messenger.send(player, Messenger.ECONOMY_SUCCESS_SENDER, "receiver", offlinePlayer.getName(), "amount", eco.getEconomy().format(amount), "currency", eco.getEconomy().currencyNamePlural());
+            payerData.set(args[3], sender.getEconomyData().get(args[3]) - amount);
+            receiverEconomyData.set(args[3], receiverEconomyData.get(args[3]) + amount);
+            messenger.send(player, Messenger.ECONOMY_SUCCESS_SENDER, "sender", player.getName(), "amount", eco.getEconomy().format(amount), "currency", eco.getEconomy().currencyNamePlural());
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(receiverData.getUUID());
             if (offlinePlayer.isOnline() && offlinePlayer instanceof Player r){
-                messenger.send(r, Messenger.ECONOMY_SUCCESS_RECEIVER, "sender", r.getName(), "amount", eco.getEconomy().format(amount), "currency", eco.getEconomy().currencyNamePlural());
+                messenger.send(r, Messenger.ECONOMY_SUCCESS_RECEIVER, "receiver", r.getName(), "amount", eco.getEconomy().format(amount), "currency", eco.getEconomy().currencyNamePlural());
             }
         }else {
             messenger.send(player, Messenger.ECONOMY_DISABLED);
         }
         return true;
-    }
-
-
-
-    public OfflinePlayer getOfflinePlayer(String playerName){
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
-        if (!offlinePlayer.hasPlayedBefore()){
-            return null;
-        }
-        return offlinePlayer;
     }
 
     public boolean look(Player player, String[] args){
@@ -291,7 +285,8 @@ public class EconomyHandler implements CommandAPI {
             }
         }
         return switch (rootArg) {
-            case "pay", "get", "set", "take", "give" -> sender.hasPermission(PERM_MAP.get(rootArg)) ? (args.length == 4 ? economy.getCurrencyList() : (args.length == 5 ? AMOUNT_LIST : List.of())) : List.of();
+            case "pay", "set", "take", "give" -> sender.hasPermission(PERM_MAP.get(rootArg)) ? (args.length == 4 ? economy.getCurrencyList() : (args.length == 5 ? AMOUNT_LIST : List.of())) : List.of();
+            case "get" -> sender.hasPermission(PERM_MAP.get(rootArg)) ? (args.length == 4 ? economy.getCurrencyList() : List.of()) : List.of();
             default -> List.of();
         };
     }

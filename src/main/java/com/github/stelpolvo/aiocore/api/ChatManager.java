@@ -3,11 +3,12 @@ package com.github.stelpolvo.aiocore.api;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
 import java.util.Map;
 
-public interface ChatManager extends Listener, PluginMessageListener {
+public interface ChatManager extends Listener, PluginMessageListener, EventExecutor {
     ChatStyle getChatStyle(String key);
     Map<String, ChatStyle> getChatStyles();
     NameStyle getNameStyle(String key);
@@ -18,6 +19,7 @@ public interface ChatManager extends Listener, PluginMessageListener {
     Map<String, SoundStyle> getSoundStyles();
     Channel getChannel(String key);
     Map<String, Channel> getChannels();
+    void close();
     boolean isEnabled();
     interface Style {
         String key();

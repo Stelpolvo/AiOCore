@@ -2,6 +2,7 @@ name: AiOCore
 version: '${project.version}'
 authors: ["Stelpolvo"]
 main: com.github.stelpolvo.aiocore.AiOCore
+
 api-version: '1.18'
 depend:
   - Vault
@@ -10,6 +11,11 @@ libraries:
   - 'org.xerial:sqlite-jdbc:3.44.1.0'
   - 'com.mysql:mysql-connector-j:8.3.0'
   - 'com.zaxxer:HikariCP:7.1.0'
+  - 'net.kyori:adventure-platform-bukkit:4.4.1'
+  - 'net.kyori:adventure-api:${adventure.version}'
+  - 'net.kyori:adventure-text-serializer-plain:${adventure.version}'
+  - 'net.kyori:adventure-text-serializer-gson:${adventure.version}'
+  - 'net.kyori:adventure-text-serializer-legacy:${adventure.version}'
 commands:
   aio:
     description: aio 主命令
@@ -51,8 +57,6 @@ permissions:
     default: op
   aio.command.admin.economy.give:
     default: op
-  aio.def.money:
-    default: true
 
   aio.command.def.chat:
     default: true

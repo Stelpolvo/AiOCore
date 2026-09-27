@@ -16,10 +16,11 @@ settings:
     subcommand-not-found: "&c找不到子命令 &e{command}"
     number-format-exception: "&c参数必须为数字"
     is-player-command: "&c该命令仅玩家可执行"
-    success-save-data: "&a✔ &f玩家数据已保存"
+    success-save-data: "&a✔ &f玩家数据已保存 {time}ms"
     success-load-economy: "&a✔ &f已加载经济货币 &e{currency}"
     player-not-exist: "这个玩家不存在"
     player-not-online: "这个玩家不在线"
+    invalid-data-source: "数据源不可用"
 
 economy:
   # 是否启用经济系统
@@ -84,8 +85,6 @@ chat:
     enabled: true
     type: "PLUGIN_MESSAGE"
     server-id: "survival-1"
-    channels:
-      - "default"
   messages:
     style-not-exist: "没有这个样式"
     style-not-permission: "没有选择这个样式的权限: {permission}"
@@ -137,12 +136,8 @@ chat:
 
     message:
       default:
-        permission: "aio.chat.style.message.def"
-        color: ["AA00AA", "00FFFF"]
-
-      white:
         permission: "aio.chat.style.message.white"
-        color: ["FFFFFF"]
+        color: [ "FFFFFF" ]
 
       gray:
         permission: "aio.chat.style.message.gray"

@@ -37,6 +37,7 @@ public class EconomyManagerImpl implements EconomyManager {
                 try {
                     AiOEconomy economy = new AiOEconomyImpl(
                             dataManager, key,
+                            currencies.getString(key+".display-name"),
                             currencies.getString(key+".name-singular"),
                             currencies.getString(key+".name-plural"),
                             currencies.getInt(key+".fractional-digits"),

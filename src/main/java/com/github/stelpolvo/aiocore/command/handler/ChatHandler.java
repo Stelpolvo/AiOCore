@@ -83,6 +83,10 @@ public class ChatHandler implements CommandAPI {
     }
 
     private void onCommand(CommandSender sender, String[] args) {
+        if (!manager.isEnabled()){
+            messenger.send(sender, Messenger.INVALID_DATA_SOURCE);
+            return;
+        }
         if (args.length == 3){
             if (args[2].equalsIgnoreCase("show")){
                 if (sender instanceof Player player){

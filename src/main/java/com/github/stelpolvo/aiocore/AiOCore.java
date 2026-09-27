@@ -21,7 +21,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
-import java.util.logging.Level;
 
 public final class AiOCore extends JavaPlugin implements AiO {
     private PlaceholderExpansion placeholder;
@@ -85,8 +84,6 @@ public final class AiOCore extends JavaPlugin implements AiO {
         this.chatManager = new ChatManagerImpl(this, this.playerDataManager, config.getConfigurationSection("chat"), getLogger());
         Bukkit.getPluginManager().registerEvents(this.chatManager, this);
 
-        this.placeholder = new AiOHook(this);
-        this.placeholder.register();
         if (task != null){
             task.cancel();
             task = null;
@@ -98,7 +95,8 @@ public final class AiOCore extends JavaPlugin implements AiO {
                 saveData();
             }
         }.runTaskTimer(this, updateDuration, updateDuration);
-        new AiOHook(this).register();
+        this.placeholder = new AiOHook(this);
+        this.placeholder.register();
         try {
             this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this.chatManager);
         }catch (IllegalArgumentException ignore){

@@ -38,9 +38,13 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
 
     }
 
-    protected void close() {
+    public void disable() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
         }
+    }
+
+    public boolean isEnabled() {
+        return dataSource != null && !dataSource.isClosed() && dataSource.isRunning();
     }
 }

@@ -13,6 +13,7 @@ public interface Messenger {
     String SUCCESS_LOAD_ECONOMY = "success-load-economy";
     String PLAYER_NOT_EXIST = "player-not-exist";
     String PLAYER_NOT_ONLINE = "player-not-online";
+    String INVALID_DATA_SOURCE = "invalid-data-source";
 
     String ECONOMY_SUCCESS_SENDER        = "success-sender";
     String ECONOMY_SUCCESS_RECEIVER      = "success-receiver";
