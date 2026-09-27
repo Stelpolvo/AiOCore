@@ -163,8 +163,6 @@ AiOCore is under active personal development. Planned modules:
 - [x] Multi-currency economy
 - [x] Chat system with styles, channels and cross-server support
 - [ ] **Menus / GUIs** — a declarative, config-driven menu system
-- [ ] Additional PlaceholderAPI expansions
-- [ ] Redis-based cross-server transport
 
 ## 📄 License
 
