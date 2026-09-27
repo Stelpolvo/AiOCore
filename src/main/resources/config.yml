@@ -11,10 +11,6 @@ settings:
     pool-size: 10
     username: "admin"
     password: "admin"
-  redis:
-    host: "127.0.0.1"
-    port: 6379
-    password: ""
   messages:
     prefix: "&8[&cAiOCore&8] &r"
     no-permission: "&c你没有权限执行此操作 &8(&7{permission}&8)"
@@ -80,11 +76,16 @@ chat:
     default:
       permission: "aio.chat.channel.def"
       name: "默认频道"
+    global:
+      permission: "aio.chat.channel.global"
+      name: "全服频道"
+    local:
+      permission: "aio.chat.channel.local"
+      name: "本地频道"
   cross-server:
     enabled: true
-    # REDIS or PLUGIN_MESSAGE
     type: "PLUGIN_MESSAGE"
-    server-id: "survival-1" # 本服标识
+    server-id: "survival-1"
     channels:
       - "default"
   messages:
@@ -93,25 +94,167 @@ chat:
     style-display: "样式展示"
     style-display-line: "效果: {effect} &f权限点: {permission}"
     success-set-style: "样式设置成功: {style}"
+
   styles:
     name:
       default:
         permission: "aio.chat.style.name.def"
         color: ["FFFFFF"]
+
+      silver:
+        permission: "aio.chat.style.name.silver"
+        color: ["E8E8E8", "B0B0B0"]
+
+      gold:
+        permission: "aio.chat.style.name.gold"
+        color: ["FFF4A3", "FFB300"]
+
+      diamond:
+        permission: "aio.chat.style.name.diamond"
+        color: ["B9F3FF", "39C5FF"]
+
+      emerald:
+        permission: "aio.chat.style.name.emerald"
+        color: ["A8FFC7", "00C46A"]
+
+      nebula:
+        permission: "aio.chat.style.name.nebula"
+        color: ["FF7AD9", "A45CFF"]
+
+      flame:
+        permission: "aio.chat.style.name.flame"
+        color: ["FFD166", "FF4B2B"]
+
+      aurora:
+        permission: "aio.chat.style.name.aurora"
+        color: ["7CFFCB", "7B6CFF"]
+
+      rainbow:
+        permission: "aio.chat.style.name.rainbow"
+        color: ["FF4B4B", "FFD166", "4BFFB2", "4B9BFF"]
+
+      admin:
+        permission: "aio.chat.style.name.admin"
+        color: ["FF8A80", "C62828"]
+
     message:
       default:
         permission: "aio.chat.style.message.def"
         color: ["AA00AA", "00FFFF"]
+
+      white:
+        permission: "aio.chat.style.message.white"
+        color: ["FFFFFF"]
+
+      gray:
+        permission: "aio.chat.style.message.gray"
+        color: ["E0E0E0"]
+
+      peach:
+        permission: "aio.chat.style.message.peach"
+        color: ["FFB7C5", "FF8C42"]
+
+      mint:
+        permission: "aio.chat.style.message.mint"
+        color: ["B8FFE0", "5CE1E6"]
+
+      ocean:
+        permission: "aio.chat.style.message.ocean"
+        color: ["A0E9FF", "2A7FFF"]
+
+      sakura:
+        permission: "aio.chat.style.message.sakura"
+        color: ["FFC0CB", "C86DD7"]
+
+      sunset:
+        permission: "aio.chat.style.message.sunset"
+        color: ["FFD166", "FF6B6B", "A45CFF"]
+
+      rainbow:
+        permission: "aio.chat.style.message.rainbow"
+        color: ["FF4B4B", "FFD166", "4BFFB2", "4B9BFF", "C86DD7"]
+
     chat:
       default:
         permission: "aio.chat.style.chat.def"
         format: "&d✦ &f%player% &d➜ &f%message%"
+
+      minimal:
+        permission: "aio.chat.style.chat.minimal"
+        format: "&f%player% &8: &f%message%"
+
+      soft:
+        permission: "aio.chat.style.chat.soft"
+        format: "&8「 &f%player% &8」 &7%message%"
+
+      modern:
+        permission: "aio.chat.style.chat.modern"
+        format: "&f%player% &8▏ &7%message%"
+
+      rpg:
+        permission: "aio.chat.style.chat.rpg"
+        format: "&8[&b%player%&8] &7%message%"
+
+      global:
+        permission: "aio.chat.style.chat.global"
+        format: "&6[&e全服&6] &f%player% &8» &f%message%"
+
+      cross-server:
+        permission: "aio.chat.style.chat.cross"
+        format: "&8[&b%server%&8] &f%player% &8➤ &7%message%"
+
+      cute:
+        permission: "aio.chat.style.chat.cute"
+        format: "&d✧ &f%player% &d➜ &f%message%"
+
+      tech:
+        permission: "aio.chat.style.chat.tech"
+        format: "&8<&b%player%&8> &7%message%"
+
+      channel:
+        permission: "aio.chat.style.chat.channel"
+        format: "&8[&7聊天&8] &f%player% &8❯ &7%message%"
+
     sound:
       default:
         permission: "aio.chat.style.sound.def"
         # sound-key;volume;pitch
         sound: "ENTITY_ITEM_PICKUP;1;1"
 
+      silent:
+        permission: "aio.chat.style.sound.silent"
+        sound: ""
 
+      click:
+        permission: "aio.chat.style.sound.click"
+        sound: "UI_BUTTON_CLICK;0.6;1.6"
+
+      orb:
+        permission: "aio.chat.style.sound.orb"
+        sound: "ENTITY_EXPERIENCE_ORB_PICKUP;0.5;1.4"
+
+      bell:
+        permission: "aio.chat.style.sound.bell"
+        sound: "BLOCK_NOTE_BLOCK_BELL;0.7;1.8"
+
+      xylophone:
+        permission: "aio.chat.style.sound.xylophone"
+        sound: "BLOCK_NOTE_BLOCK_XYLOPHONE;0.6;1.5"
+
+      levelup:
+        permission: "aio.chat.style.sound.levelup"
+        sound: "ENTITY_PLAYER_LEVELUP;0.8;1.2"
+
+      diamond:
+        permission: "aio.chat.style.sound.diamond"
+        sound: "BLOCK_NOTE_BLOCK_CHIME;0.7;2.0"
+
+      flame:
+        permission: "aio.chat.style.sound.flame"
+        sound: "ITEM_FIRECHARGE_USE;0.7;1.0"
+
+      fireworks:
+        permission: "aio.chat.style.sound.fireworks"
+        sound: "ENTITY_FIREWORK_ROCKET_BLAST;0.8;1.3"
 
 

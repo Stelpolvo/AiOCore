@@ -43,8 +43,4 @@ public interface ChatManager extends Listener, PluginMessageListener {
         String name();
         String permission();
     }
-    enum CrossServerType {
-        PLUGIN_MESSAGE,
-        REDIS
-    }
 }
