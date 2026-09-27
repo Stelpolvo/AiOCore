@@ -21,6 +21,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
+import java.util.logging.Level;
 
 public final class AiOCore extends JavaPlugin implements AiO {
     private PlaceholderExpansion placeholder;
@@ -62,7 +63,7 @@ public final class AiOCore extends JavaPlugin implements AiO {
         if (storageSec != null) {
             switch (config.getString("settings.storage.type", "yml").toLowerCase()){
                 case "sqlite":
-                    this.playerDataManager = new SQLitePlayerDataManager(storageSec, getLogger(), this.messenger);
+                    this.playerDataManager = new SQLitePlayerDataManager(this, storageSec, getLogger(), this.messenger);
                     break;
                 case "mysql":
                     this.playerDataManager = new MySQLPlayerDataManager(storageSec, getLogger(), this.messenger);
@@ -93,6 +94,7 @@ public final class AiOCore extends JavaPlugin implements AiO {
         long updateDuration = Math.max(1, config.getLong("settings.save-interval-seconds"))*20;
         task = new BukkitRunnable() {
             public void run() {
+
                 saveData();
             }
         }.runTaskTimer(this, updateDuration, updateDuration);

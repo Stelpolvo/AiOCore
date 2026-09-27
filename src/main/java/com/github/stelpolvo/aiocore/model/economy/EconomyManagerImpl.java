@@ -31,7 +31,6 @@ public class EconomyManagerImpl implements EconomyManager {
             return;
         }
         this.vault = section.getString("vault");
-        messenger.send(Bukkit.getConsoleSender(), Messenger.ECONOMY_ENABLE_VAULT, "currency", this.vault);
         ConfigurationSection currencies = section.getConfigurationSection("currencies");
         if (currencies != null) {
             currencies.getKeys(false).forEach(key -> {
@@ -46,7 +45,6 @@ public class EconomyManagerImpl implements EconomyManager {
                             currencies.getBoolean(key+".transferable")
                     );
                     economyMap.put(key, economy);
-                    messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_LOAD_ECONOMY, "currency", economy.getCurrencyKey());
                 }catch (Exception e){
                     logger.log(Level.SEVERE, "Failed to load economy for " + key, e);
                 }

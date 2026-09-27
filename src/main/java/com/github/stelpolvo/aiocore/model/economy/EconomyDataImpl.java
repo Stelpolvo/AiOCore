@@ -32,8 +32,8 @@ public class EconomyDataImpl implements EconomyData {
         return isCurrent;
     }
 
-    public void update(){
-        isCurrent = true;
+    public void setCurrent(boolean current) {
+        this.isCurrent = current;
     }
 
     public boolean isInit() {
@@ -42,5 +42,14 @@ public class EconomyDataImpl implements EconomyData {
 
     public void setInit(boolean init) {
         this.isInit = init;
+    }
+
+    @Override
+    public String toString() {
+        return "EconomyDataImpl{" +
+                "data=" + data +
+                ", isCurrent=" + isCurrent +
+                ", isInit=" + isInit +
+                '}';
     }
 }

@@ -165,11 +165,12 @@ public class EconomyHandler implements CommandAPI {
             sendUsage(sender);
             return true;
         }
-        OfflinePlayer offlinePlayer = getOfflinePlayer(args[2]);
-        if (offlinePlayer == null){
+        PlayerData data = manager.getByName(args[2]);
+        if (data == null){
             messenger.send(sender, Messenger.ECONOMY_INVALID_RECEIVER);
             return true;
         }
+
         EconomyManager.AiOEconomy eco = economy.getAiOEconomy(args[3]);
         if (eco == null){
             messenger.send(sender, Messenger.ECONOMY_INVALID_CURRENCY);
@@ -178,9 +179,9 @@ public class EconomyHandler implements CommandAPI {
         messenger.send(
                 sender,
                 Messenger.ECONOMY_GET,
-                "player", offlinePlayer.getName(),
+                "player", Bukkit.getOfflinePlayer(data.getUUID()).getName(),
                 "currency", eco.getEconomy().currencyNamePlural(),
-                "amount", eco.getEconomy().format(eco.getEconomy().getBalance(offlinePlayer)));
+                "amount", eco.getEconomy().format(data.getEconomyData().get(args[3])));
         return true;
     }
     public boolean set(CommandSender sender, String[] args){
@@ -188,8 +189,8 @@ public class EconomyHandler implements CommandAPI {
             sendUsage(sender);
             return true;
         }
-        OfflinePlayer offlinePlayer = getOfflinePlayer(args[2]);
-        if (offlinePlayer == null){
+        PlayerData data = manager.getByName(args[2]);
+        if (data == null){
             messenger.send(sender, Messenger.ECONOMY_INVALID_RECEIVER);
             return true;
         }
@@ -198,9 +199,9 @@ public class EconomyHandler implements CommandAPI {
             messenger.send(sender, Messenger.ECONOMY_INVALID_CURRENCY);
             return true;
         }
-        EconomyData data = manager.getByName(offlinePlayer.getName()).getEconomyData();
-        data.set(args[3], Double.parseDouble(args[4]));
-        messenger.send(sender, Messenger.ECONOMY_SET, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(data.get(args[3])));
+        EconomyData economyData = data.getEconomyData();
+        economyData.set(args[3], Double.parseDouble(args[4]));
+        messenger.send(sender, Messenger.ECONOMY_SET, "player", Bukkit.getOfflinePlayer(data.getUUID()).getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(economyData.get(args[3])));
         return true;
     }
 
@@ -209,8 +210,8 @@ public class EconomyHandler implements CommandAPI {
             sendUsage(sender);
             return true;
         }
-        OfflinePlayer offlinePlayer = getOfflinePlayer(args[2]);
-        if (offlinePlayer == null){
+        PlayerData data = manager.getByName(args[2]);
+        if (data == null){
             messenger.send(sender, Messenger.ECONOMY_INVALID_RECEIVER);
             return true;
         }
@@ -219,14 +220,14 @@ public class EconomyHandler implements CommandAPI {
             messenger.send(sender, Messenger.ECONOMY_INVALID_CURRENCY);
             return true;
         }
-        EconomyData data = manager.getByName(offlinePlayer.getName()).getEconomyData();
+        EconomyData economyData = data.getEconomyData();
         double take = Double.parseDouble(args[4]);
-        double has = data.get(args[3]);
+        double has = economyData.get(args[3]);
         if (take > has){
             take = has;
         }
-        data.set(args[3], Math.max(0, data.get(args[3]) - take));
-        messenger.send(sender, Messenger.ECONOMY_TAKE, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(take));
+        economyData.set(args[3], Math.max(0, economyData.get(args[3]) - take));
+        messenger.send(sender, Messenger.ECONOMY_TAKE, "player", Bukkit.getOfflinePlayer(data.getUUID()).getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(take));
 
         return true;
     }
@@ -235,8 +236,8 @@ public class EconomyHandler implements CommandAPI {
             sendUsage(sender);
             return true;
         }
-        OfflinePlayer offlinePlayer = getOfflinePlayer(args[2]);
-        if (offlinePlayer == null){
+        PlayerData data = manager.getByName(args[2]);
+        if (data == null){
             messenger.send(sender, Messenger.ECONOMY_INVALID_RECEIVER);
             return true;
         }
@@ -245,9 +246,9 @@ public class EconomyHandler implements CommandAPI {
             messenger.send(sender, Messenger.ECONOMY_INVALID_CURRENCY);
             return true;
         }
-        EconomyData data = manager.getByName(offlinePlayer.getName()).getEconomyData();
-        data.set(args[3], data.get(args[3]) + Double.parseDouble(args[4]));
-        messenger.send(sender, Messenger.ECONOMY_GIVE, "player", offlinePlayer.getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(data.get(args[3])));
+        EconomyData economyData = data.getEconomyData();
+        economyData.set(args[3], economyData.get(args[3]) + Double.parseDouble(args[4]));
+        messenger.send(sender, Messenger.ECONOMY_GIVE, "player", Bukkit.getOfflinePlayer(data.getUUID()).getName(), "currency", eco.getEconomy().currencyNamePlural(), "amount", eco.getEconomy().format(economyData.get(args[3])));
         return true;
     }
     public boolean sendUsage(CommandSender sender){

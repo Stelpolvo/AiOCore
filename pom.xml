@@ -6,7 +6,7 @@
 
     <groupId>com.github.stelpolvo.aiocore</groupId>
     <artifactId>AiOCore</artifactId>
-    <version>0.2.0-alpha.1</version>
+    <version>0.3.0-alpha.1</version>
     <packaging>jar</packaging>
 
     <name>AiOCore</name>
@@ -128,6 +128,7 @@
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>7.1.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

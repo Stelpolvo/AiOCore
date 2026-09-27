@@ -180,7 +180,6 @@ public class AiOEconomyImpl extends AbstractEconomy implements EconomyManager.Ai
 
             double newBalance = balance - amount;
             data.set(currencyKey, newBalance);
-            data.update();
 
             return new EconomyResponse(amount, newBalance, ResponseType.SUCCESS, null);
         }
@@ -210,7 +209,6 @@ public class AiOEconomyImpl extends AbstractEconomy implements EconomyManager.Ai
             double newBalance = balance + amount;
 
             data.set(currencyKey, newBalance);
-            data.update();
 
             return new EconomyResponse(amount, newBalance, ResponseType.SUCCESS, null);
         }

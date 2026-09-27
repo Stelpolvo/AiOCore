@@ -1,7 +1,6 @@
 settings:
   # 数据保存间隔（秒）
-  save-interval-seconds: 2
-  save-path: "/data"
+  save-interval-seconds: 10
   storage:
     # yml/mysql/sqlite
     type: "yml"
@@ -51,12 +50,11 @@ economy:
 
   messages:
     enable-vault: "&a✔ &f已绑定 Vault 货币: &e{currency}"
-
     # {sender} 发送者, {receiver} 接收者, {amount} 金额, {currency} 货币显示名, {fee} 手续费
     success-sender:   "&a➤ &f你向 &e{receiver} &f转账了 &6{amount} {currency}"
     success-receiver: "&a➤ &f你收到了来自 &e{sender} &f的 &6{amount} {currency}"
-    look:             "&a➤ &f你的 &e{currency} &f余额为 &6{amount}"
-    get:              "&a➤ &e{player} &f的 &e{currency} &f余额为 &6{amount}"
+    look:             "&a➤ &f你的 &e{currency} &f为 &6{amount}"
+    get:              "&a➤ &e{player} &f的 &e{currency} &f为 &6{amount}"
     set:              "&a➤ &f已将 &e{player} &f的 &e{currency} &f设置为 &6{amount}"
     take:             "&a➤ &f已从 &e{player} &f扣除 &6{amount} {currency}"
     give:             "&a➤ &f已给予 &e{player} &6{amount} {currency}"

@@ -30,18 +30,17 @@ public class MySQLPlayerDataManager extends SQLPlayerDataManager {
     public static final String CREATE_PLAYER_TABLE = """
             CREATE TABLE IF NOT EXISTS aio (
             uuid CHAR(36) PRIMARY KEY,
-            name VARCHAR(16) NOT NULL,
+            username VARCHAR(16) NOT NULL,
             economy_data TEXT NOT NULL,
-            chat_data TEXT NOT NULL,
-            INDEX idx_aio_name (name)
+            chat_data TEXT NOT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """;
 
-    public static final String SELECT_PLAYER_BY_NAME = "SELECT * FROM aio WHERE name = ?;";
+    public static final String SELECT_PLAYER_BY_NAME = "SELECT * FROM aio WHERE username = ?;";
     public static final String SELECT_PLAYER_BY_UUID = "SELECT * FROM aio WHERE uuid = ?;";
 
     public static final String INSERT_PLAYER = """
-            INSERT IGNORE INTO aio (uuid, name, economy_data, chat_data)
+            INSERT IGNORE INTO aio (uuid, username, economy_data, chat_data)
             VALUES (?, ?, '{}', '{}')
             """;
 
@@ -64,9 +63,13 @@ public class MySQLPlayerDataManager extends SQLPlayerDataManager {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(CREATE_PLAYER_TABLE)) {
             ps.execute();
+            conn.commit();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Failed to initialize aio table", e);
         }
+        Bukkit.getOnlinePlayers().stream().forEach(player -> {
+            onPlayerJoin(new PlayerJoinEvent(player, ""));
+        });
     }
 
     @EventHandler
@@ -173,7 +176,7 @@ public class MySQLPlayerDataManager extends SQLPlayerDataManager {
                 chatMap.getOrDefault("channel", ChatData.DEFAULT_KEY)
         ));
 
-        String name = rs.getString("name");
+        String name = rs.getString("username");
         if (name != null) {
             playerRecordMap.put(name, uuid);
         }
@@ -303,7 +306,9 @@ public class MySQLPlayerDataManager extends SQLPlayerDataManager {
         if (playerDataMap.isEmpty()) {
             return;
         }
-
+        long start = System.nanoTime();
+        boolean isSuccess = false;
+        boolean isCurrent = true;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(UPDATE_AIO_BY_UUID)) {
 
@@ -324,6 +329,8 @@ public class MySQLPlayerDataManager extends SQLPlayerDataManager {
                     boolean chatDirty = !chat.isCurrent() || chat.isInit();
                     if (!ecoDirty && !chatDirty) {
                         continue;
+                    }else {
+                        isCurrent = false;
                     }
 
                     JsonObject ecoObj = new JsonObject();
@@ -344,7 +351,7 @@ public class MySQLPlayerDataManager extends SQLPlayerDataManager {
 
                 ps.executeBatch();
                 conn.commit();
-
+                isSuccess = true;
             } catch (SQLException e) {
                 try {
                     conn.rollback();
@@ -358,6 +365,20 @@ public class MySQLPlayerDataManager extends SQLPlayerDataManager {
             logger.log(Level.SEVERE, "Failed to save player data in batch", ex);
         } catch (RuntimeException ex) {
             logger.log(Level.SEVERE, "Unexpected error while saving player data", ex);
+        }finally {
+            if (isSuccess && !isCurrent) {
+                playerDataMap.values().forEach(d -> {
+                    d.getEconomyData().setCurrent(true);
+                    d.getEconomyData().setInit(false);
+                    d.getChatData().setCurrent(true);
+                    d.getChatData().setInit(false);
+                });
+                if (isSuccess){
+                    logger.log(Level.INFO, String.format(
+                            "Saved all player data in %d ms",
+                            (System.nanoTime() - start) / 1_000_000));
+                }
+            }
         }
     }
 

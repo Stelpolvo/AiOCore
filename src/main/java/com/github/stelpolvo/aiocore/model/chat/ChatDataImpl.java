@@ -67,11 +67,28 @@ public class ChatDataImpl implements ChatData {
         return isCurrent;
     }
 
+    public void setCurrent(boolean current) {
+        this.isCurrent = current;
+    }
+
     public boolean isInit() {
         return isInit;
     }
 
     public void setInit(boolean init) {
         this.isInit = init;
+    }
+
+    @Override
+    public String toString() {
+        return "ChatDataImpl{" +
+                "nameKey='" + nameKey + '\'' +
+                ", messageKey='" + messageKey + '\'' +
+                ", chatKey='" + chatKey + '\'' +
+                ", soundKey='" + soundKey + '\'' +
+                ", channelKey='" + channelKey + '\'' +
+                ", isCurrent=" + isCurrent +
+                ", isInit=" + isInit +
+                '}';
     }
 }

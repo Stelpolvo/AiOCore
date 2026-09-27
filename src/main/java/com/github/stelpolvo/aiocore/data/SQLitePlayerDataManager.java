@@ -1,5 +1,6 @@
 package com.github.stelpolvo.aiocore.data;
 
+import com.github.stelpolvo.aiocore.api.AiO;
 import com.github.stelpolvo.aiocore.api.Messenger;
 import com.github.stelpolvo.aiocore.api.data.ChatData;
 import com.github.stelpolvo.aiocore.api.data.EconomyData;
@@ -9,6 +10,7 @@ import com.github.stelpolvo.aiocore.model.economy.EconomyDataImpl;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -16,6 +18,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,20 +32,18 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
     public static final String CREATE_PLAYER_TABLE = """
             CREATE TABLE IF NOT EXISTS aio (
             uuid VARCHAR(36) PRIMARY KEY,
-            name VARCHAR(16) NOT NULL,
+            username VARCHAR(16) NOT NULL,
             economy_data TEXT DEFAULT '{}',
             chat_data TEXT DEFAULT '{}'
             );
             """;
 
-    public static final String CREATE_NAME_INDEX =
-            "CREATE INDEX IF NOT EXISTS idx_aio_name ON aio(name);";
 
-    public static final String SELECT_PLAYER_BY_NAME = "SELECT * FROM aio WHERE name = ?;";
+    public static final String SELECT_PLAYER_BY_NAME = "SELECT * FROM aio WHERE username = ?;";
     public static final String SELECT_PLAYER_BY_UUID = "SELECT * FROM aio WHERE uuid = ?;";
 
     public static final String INSERT_PLAYER = """
-            INSERT OR IGNORE INTO aio (uuid, name, economy_data, chat_data)
+            INSERT OR IGNORE INTO aio (uuid, username, economy_data, chat_data)
             VALUES (?, ?, '{}', '{}')
             """;
 
@@ -55,9 +56,17 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
     private final Gson gson = new Gson();
     private final Map<String, UUID> playerRecordMap = new HashMap<>();
 
-    public SQLitePlayerDataManager(ConfigurationSection config, Logger logger, Messenger messenger) {
+    public SQLitePlayerDataManager(AiO aio, ConfigurationSection config, Logger logger, Messenger messenger) {
         super(config, logger, messenger, "org.sqlite.JDBC");
+        String url = config.getString("url");
+        if (url.startsWith("jdbc:sqlite:")) {
+            url = url.substring("jdbc:sqlite:".length());
+            hikariConfig.setJdbcUrl("jdbc:sqlite:"+new File(aio.getJavaPlugin().getDataFolder(), url).getAbsolutePath());
+        }else {
+            hikariConfig.setJdbcUrl(url);
+        }
 
+        this.dataSource = new HikariDataSource(hikariConfig);
         Arrays.stream(Bukkit.getOfflinePlayers())
                 .filter(p -> p.getName() != null)
                 .forEach(p -> playerRecordMap.put(p.getName(), p.getUniqueId()));
@@ -66,12 +75,13 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
             try (PreparedStatement ps = conn.prepareStatement(CREATE_PLAYER_TABLE)) {
                 ps.execute();
             }
-            try (PreparedStatement ps = conn.prepareStatement(CREATE_NAME_INDEX)) {
-                ps.execute();
-            }
+            conn.commit();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Failed to initialize aio table", e);
         }
+        Bukkit.getOnlinePlayers().stream().forEach(player -> {
+            onPlayerJoin(new PlayerJoinEvent(player, ""));
+        });
     }
 
     @EventHandler
@@ -178,7 +188,7 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
                 chatMap.getOrDefault("channel", ChatData.DEFAULT_KEY)
         ));
 
-        String name = rs.getString("name");
+        String name = rs.getString("username");
         if (name != null) {
             playerRecordMap.put(name, uuid);
         }
@@ -279,6 +289,10 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
                 int affected = ps.executeUpdate();
                 if (affected >= 1) {
                     conn.commit();
+                    economyData.setInit(false);
+                    economyData.setCurrent(true);
+                    chatData.setInit(false);
+                    chatData.setCurrent(true);
                     return true;
                 }
 
@@ -308,7 +322,9 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
         if (playerDataMap.isEmpty()) {
             return;
         }
-
+        long start = System.nanoTime();
+        boolean isSuccess = false;
+        boolean isCurrent = true;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(UPDATE_AIO_BY_UUID)) {
 
@@ -329,6 +345,8 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
                     boolean chatDirty = !chat.isCurrent() || chat.isInit();
                     if (!ecoDirty && !chatDirty) {
                         continue;
+                    }else {
+                        isCurrent = false;
                     }
 
                     JsonObject ecoObj = new JsonObject();
@@ -349,7 +367,7 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
 
                 ps.executeBatch();
                 conn.commit();
-
+                isSuccess = true;
             } catch (SQLException e) {
                 try {
                     conn.rollback();
@@ -363,6 +381,20 @@ public class SQLitePlayerDataManager extends SQLPlayerDataManager {
             logger.log(Level.SEVERE, "Failed to save player data in batch", ex);
         } catch (RuntimeException ex) {
             logger.log(Level.SEVERE, "Unexpected error while saving player data", ex);
+        }finally {
+            if (isSuccess && !isCurrent) {
+                playerDataMap.values().forEach(d -> {
+                    d.getEconomyData().setCurrent(true);
+                    d.getEconomyData().setInit(false);
+                    d.getChatData().setCurrent(true);
+                    d.getChatData().setInit(false);
+                });
+                if (isSuccess){
+                    logger.log(Level.INFO, String.format(
+                            "Saved all player data in %d ms",
+                            (System.nanoTime() - start) / 1_000_000));
+                }
+            }
         }
     }
 

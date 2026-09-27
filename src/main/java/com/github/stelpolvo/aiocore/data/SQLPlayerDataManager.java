@@ -9,7 +9,8 @@ import java.util.logging.Logger;
 
 public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
 
-    protected final HikariDataSource dataSource;
+    protected HikariDataSource dataSource;
+    protected HikariConfig hikariConfig = new HikariConfig();
 
     public SQLPlayerDataManager(ConfigurationSection config, Logger logger, Messenger messenger, String driverClassName) {
         super(logger, messenger);
@@ -19,7 +20,7 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
             throw new IllegalStateException("Missing 'url' in database config");
         }
 
-        HikariConfig hikariConfig = new HikariConfig();
+
         hikariConfig.setJdbcUrl(url);
         hikariConfig.setUsername(config.getString("username", ""));
         hikariConfig.setPassword(config.getString("password", ""));
@@ -34,7 +35,7 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
             hikariConfig.setDriverClassName(driverClassName);
         }
 
-        this.dataSource = new HikariDataSource(hikariConfig);
+
     }
 
     protected void close() {

@@ -13,6 +13,7 @@ public interface ChatData {
     void setSoundStyle(String soundStyle);
     void setChannel(String channel);
     boolean isCurrent();
+    void setCurrent(boolean current);
     boolean isInit();
     void setInit(boolean init);
 }
