@@ -7,12 +7,15 @@ public class ChatDataImpl implements ChatData {
     private String messageKey;
     private String chatKey;
     private String soundKey;
+    private String channelKey;
     private boolean isCurrent = true;
-    public ChatDataImpl(String nameKey, String messageKey, String chatKey, String soundKey) {
+    private boolean isInit = false;
+    public ChatDataImpl(String nameKey, String messageKey, String chatKey, String soundKey, String channelKey) {
         this.nameKey = nameKey;
         this.messageKey = messageKey;
         this.chatKey = chatKey;
         this.soundKey = soundKey;
+        this.channelKey = channelKey;
     }
 
     public String getNameStyle() {
@@ -29,6 +32,10 @@ public class ChatDataImpl implements ChatData {
 
     public String getSoundStyle() {
         return soundKey;
+    }
+
+    public String getChannel() {
+        return channelKey;
     }
 
     public void setNameStyle(String nameStyle) {
@@ -51,7 +58,20 @@ public class ChatDataImpl implements ChatData {
         this.isCurrent = false;
     }
 
+    public void setChannel(String channel) {
+        this.channelKey = channel;
+        this.isCurrent = false;
+    }
+
     public boolean isCurrent() {
         return isCurrent;
+    }
+
+    public boolean isInit() {
+        return isInit;
+    }
+
+    public void setInit(boolean init) {
+        this.isInit = init;
     }
 }

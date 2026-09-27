@@ -13,11 +13,11 @@ import java.util.List;
 
 public class AiOEconomyImpl extends AbstractEconomy implements EconomyManager.AiOEconomy {
     private final String currencyKey;
-    
+
     private final String currencyNameSingular;
 
     private final String currencyNamePlural;
-    
+
     private final PlayerDataManager manager;
 
     private volatile boolean enabled = true;

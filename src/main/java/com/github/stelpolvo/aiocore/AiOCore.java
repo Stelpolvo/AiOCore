@@ -2,6 +2,8 @@ package com.github.stelpolvo.aiocore;
 
 import com.github.stelpolvo.aiocore.api.*;
 import com.github.stelpolvo.aiocore.command.MainCommand;
+import com.github.stelpolvo.aiocore.data.MySQLPlayerDataManager;
+import com.github.stelpolvo.aiocore.data.SQLitePlayerDataManager;
 import com.github.stelpolvo.aiocore.data.YamlPlayerDataManager;
 import com.github.stelpolvo.aiocore.model.chat.ChatManagerImpl;
 import com.github.stelpolvo.aiocore.model.economy.EconomyManagerImpl;
@@ -10,15 +12,13 @@ import com.github.stelpolvo.aiocore.model.placeholder.AiOHook;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 
@@ -36,11 +36,13 @@ public final class AiOCore extends JavaPlugin implements AiO {
         loadConfig();
         ServicesManager servicesManager = Bukkit.getServicesManager();
         servicesManager.register(AiO.class, this, this, ServicePriority.Highest);
+        this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         EconomyManager.AiOEconomy vaultEconomy = economyManager.getVaultEconomy();
         if (vaultEconomy != null) {
             servicesManager.register(Economy.class, vaultEconomy.getEconomy(), this, ServicePriority.Highest);
         }
         MainCommand.init(this);
+
     }
 
     private void loadConfig(){
@@ -56,13 +58,30 @@ public final class AiOCore extends JavaPlugin implements AiO {
             this.messenger.load(config);
         }
         // player data
-        this.playerDataManager = new YamlPlayerDataManager(new File(getDataFolder(), config.getString("settings.save-path", "/data")), getLogger(), messenger);
+        ConfigurationSection storageSec = config.getConfigurationSection("settings.storage");
+        if (storageSec != null) {
+            switch (config.getString("settings.storage.type", "yml").toLowerCase()){
+                case "sqlite":
+                    this.playerDataManager = new SQLitePlayerDataManager(storageSec, getLogger(), this.messenger);
+                    break;
+                case "mysql":
+                    this.playerDataManager = new MySQLPlayerDataManager(storageSec, getLogger(), this.messenger);
+                    break;
+                default:
+                case "yaml":
+                case "yml":
+                    this.playerDataManager = new YamlPlayerDataManager(new File(getDataFolder(), storageSec.getString("url", "/data")), getLogger(), messenger);
+                    break;
+            }
+        }else {
+            this.playerDataManager = new YamlPlayerDataManager(new File(getDataFolder(),"/data"), getLogger(), messenger);
+        }
         Bukkit.getPluginManager().registerEvents(this.playerDataManager, this);
         // economy
         this.economyManager = new EconomyManagerImpl();
         this.economyManager.load(config.getConfigurationSection("economy"), playerDataManager, getLogger(), messenger);
         // chat
-        this.chatManager = new ChatManagerImpl(this.playerDataManager, config.getConfigurationSection("chat"));
+        this.chatManager = new ChatManagerImpl(this, this.playerDataManager, config.getConfigurationSection("chat"), getLogger());
         Bukkit.getPluginManager().registerEvents(this.chatManager, this);
 
         this.placeholder = new AiOHook(this);
@@ -78,6 +97,11 @@ public final class AiOCore extends JavaPlugin implements AiO {
             }
         }.runTaskTimer(this, updateDuration, updateDuration);
         new AiOHook(this).register();
+        try {
+            this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this.chatManager);
+        }catch (IllegalArgumentException ignore){
+
+        }
     }
 
     @Override
@@ -85,7 +109,9 @@ public final class AiOCore extends JavaPlugin implements AiO {
         // Plugin shutdown logic
         task.cancel();
         task = null;
-        saveData();
+        this.playerDataManager.disable();
+        this.getServer().getMessenger().unregisterOutgoingPluginChannel(this);
+        this.getServer().getMessenger().unregisterIncomingPluginChannel(this);
     }
 
     @Override

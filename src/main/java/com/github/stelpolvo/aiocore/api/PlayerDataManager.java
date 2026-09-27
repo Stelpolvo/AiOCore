@@ -7,25 +7,15 @@ import java.util.Map;
 import java.util.UUID;
 
 public interface PlayerDataManager extends Listener {
-    default PlayerData getByName(String playerName) {
-        throw new RuntimeException("Not implemented");
-    }
+    PlayerData getByName(String playerName);
 
-    default PlayerData getByUUID(UUID uuid) {
-        throw new RuntimeException("Not implemented");
-    }
+    PlayerData getByUUID(UUID uuid);
 
-    default Map<UUID, PlayerData> getPlayerData() {
-        throw new RuntimeException("Not implemented");
-    }
+    Map<UUID, PlayerData> getPlayerData();
 
-    default boolean save(PlayerData data) {
-        throw new RuntimeException("Not implemented");
-    }
+    boolean save(PlayerData data);
 
-    default void saveAll(){
-        throw new RuntimeException("Not implemented");
-    }
+    void saveAll();
 
-
+    void disable();
 }

@@ -9,6 +9,7 @@ import java.util.Objects;
 public class EconomyDataImpl implements EconomyData {
     private final Map<String, Double> data;
     private boolean isCurrent = true;
+    private boolean isInit = false;
 
     public EconomyDataImpl(Map<String, Double> data){
         this.data = Objects.requireNonNullElse(data, new HashMap<>());
@@ -33,5 +34,13 @@ public class EconomyDataImpl implements EconomyData {
 
     public void update(){
         isCurrent = true;
+    }
+
+    public boolean isInit() {
+        return isInit;
+    }
+
+    public void setInit(boolean init) {
+        this.isInit = init;
     }
 }

@@ -25,16 +25,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class YamlPlayerDataManager implements PlayerDataManager {
+public class YamlPlayerDataManager extends AbstractPlayerDataManager {
     private final File dataFolder;
-    private final Map<UUID, PlayerData> playerDataMap = new HashMap<>();
-    private final Logger logger;
-    private final Messenger messenger;
 
     public YamlPlayerDataManager(File dataFolder, Logger logger, Messenger messenger) {
+        super(logger, messenger);
         this.dataFolder = dataFolder;
-        this.logger = logger;
-        this.messenger = messenger;
         Bukkit.getOnlinePlayers().forEach(player -> getByUUID(player.getUniqueId()));
     }
 
@@ -59,8 +55,7 @@ public class YamlPlayerDataManager implements PlayerDataManager {
         return playerData;
     }
 
-    @Override
-    public Map<UUID, PlayerData> getPlayerData(){
+    public Map<UUID, PlayerData> getPlayerData() {
         return playerDataMap;
     }
 
@@ -72,6 +67,7 @@ public class YamlPlayerDataManager implements PlayerDataManager {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         save(getByUUID(event.getPlayer().getUniqueId()));
+        playerDataMap.remove(event.getPlayer().getUniqueId());
     }
 
     @Override
@@ -96,6 +92,7 @@ public class YamlPlayerDataManager implements PlayerDataManager {
                     dataYaml.set("chat.message", chatData.getMessageStyle());
                     dataYaml.set("chat.chat", chatData.getChatStyle());
                     dataYaml.set("chat.sound", chatData.getSoundStyle());
+                    dataYaml.set("chat.channel", chatData.getChannel());
                     update = true;
                 }
                 if (update) {
@@ -126,12 +123,13 @@ public class YamlPlayerDataManager implements PlayerDataManager {
 
     }
 
-    public static class YamlPlayerData implements PlayerData {
-        protected final UUID uuid;
-        protected EconomyData economyData;
-        protected ChatData chatData;
+    public void disable() {
+        saveAll();
+    }
+
+    public static class YamlPlayerData extends AbstractPlayerData {
         public YamlPlayerData(YamlConfiguration data, UUID uuid) {
-            this.uuid = uuid;
+            super(uuid);
             ConfigurationSection ecoSection = data.getConfigurationSection("economy");
             Map<String, Double> economyMap = new HashMap<>();
             if (ecoSection != null) {
@@ -145,10 +143,12 @@ public class YamlPlayerDataManager implements PlayerDataManager {
                         chatSection.getString("name", ChatData.DEFAULT_KEY),
                         chatSection.getString("message", ChatData.DEFAULT_KEY),
                         chatSection.getString("chat", ChatData.DEFAULT_KEY),
-                        chatSection.getString("sound", ChatData.DEFAULT_KEY)
+                        chatSection.getString("sound", ChatData.DEFAULT_KEY),
+                        chatSection.getString("channel", ChatData.DEFAULT_KEY)
                 );
             }else {
                 this.chatData = new ChatDataImpl(
+                        ChatData.DEFAULT_KEY,
                         ChatData.DEFAULT_KEY,
                         ChatData.DEFAULT_KEY,
                         ChatData.DEFAULT_KEY,
@@ -161,8 +161,16 @@ public class YamlPlayerDataManager implements PlayerDataManager {
             return this.economyData;
         }
 
+        public void setEconomyData(EconomyData data) {
+            this.economyData = data;
+        }
+
         public ChatData getChatData() {
             return this.chatData;
+        }
+
+        public void setChatData(ChatData data) {
+            this.chatData = data;
         }
     }
 }

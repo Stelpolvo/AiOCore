@@ -2,6 +2,19 @@ settings:
   # 数据保存间隔（秒）
   save-interval-seconds: 2
   save-path: "/data"
+  storage:
+    # yml/mysql/sqlite
+    type: "yml"
+#    url: "jdbc:mysql://127.0.0.1:3306/aio?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4&rewriteBatchedStatements=true"
+#    url: "jdbc:sqlite:aio.db"
+    url: "/data" # yml data path
+    pool-size: 10
+    username: "admin"
+    password: "admin"
+  redis:
+    host: "127.0.0.1"
+    port: 6379
+    password: ""
   messages:
     prefix: "&8[&cAiOCore&8] &r"
     no-permission: "&c你没有权限执行此操作 &8(&7{permission}&8)"
@@ -72,10 +85,6 @@ chat:
     # REDIS or PLUGIN_MESSAGE
     type: "PLUGIN_MESSAGE"
     server-id: "survival-1" # 本服标识
-    redis:
-      host: "127.0.0.1"
-      port: 6379
-      password: ""
     channels:
       - "default"
   messages:

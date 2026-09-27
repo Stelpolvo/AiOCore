@@ -6,6 +6,11 @@ api-version: '1.18'
 depend:
   - Vault
   - PlaceholderAPI
+libraries:
+  - 'org.xerial:sqlite-jdbc:3.44.1.0'
+  - 'com.mysql:mysql-connector-j:8.3.0'
+  - 'redis.clients:jedis:5.1.0'
+  - 'com.zaxxer:HikariCP:7.1.0'
 commands:
   aio:
     description: aio 主命令
@@ -57,6 +62,7 @@ permissions:
       aio.command.def.chat.message: true
       aio.command.def.chat.chat: true
       aio.command.def.chat.sound: true
+      aio.command.def.chat.channel: true
   aio.command.def.chat.name:
     default: true
   aio.command.def.chat.message:
@@ -64,4 +70,6 @@ permissions:
   aio.command.def.chat.chat:
     default: true
   aio.command.def.chat.sound:
+    default: true
+  aio.command.def.chat.channel:
     default: true

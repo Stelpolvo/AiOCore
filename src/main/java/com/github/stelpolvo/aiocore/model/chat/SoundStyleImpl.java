@@ -34,7 +34,7 @@ public class SoundStyleImpl implements ChatManager.SoundStyle {
 
     }
 
-    public String getKey() {
+    public String key() {
         return key;
     }
 

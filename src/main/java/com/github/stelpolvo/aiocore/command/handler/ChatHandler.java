@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * /aio chat &lt;name|message|chat|sound&gt;
+ * /aio chat &lt;name|message|chat|sound&gt; show
  * /aio chat &lt;name|message|chat|sound&gt; set &lt;key&gt; [player]
  */
 public class ChatHandler implements CommandAPI {
@@ -24,9 +24,10 @@ public class ChatHandler implements CommandAPI {
             "name", "aio.command.def.chat.name",
             "message", "aio.command.def.chat.message",
             "chat", "aio.command.def.chat.chat",
-            "sound", "aio.command.def.chat.sound"
+            "sound", "aio.command.def.chat.sound",
+            "channel", "aio.command.def.chat.channel"
     );
-    public static final List<String> TAB2 = ImmutableList.of("set");
+    public static final List<String> TAB2 = ImmutableList.of("set", "show");
     private final Messenger messenger;
     private final ChatManager chatManager;
     private final PlayerDataManager manager;
@@ -46,8 +47,8 @@ public class ChatHandler implements CommandAPI {
     }
 
     public void sendUsage(CommandSender sender){
-        messenger.send(sender, "/aio chat <name|message|chat|sound>");
-        messenger.send(sender, "/aio chat <name|message|chat|sound> set <key> [player]");
+        messenger.send(sender, "/aio chat <name|message|chat|sound|channel> show");
+        messenger.send(sender, "/aio chat <name|message|chat|sound|channel> set <key> [player]");
     }
 
     public void sendDisplay(Player sender, String type){
@@ -70,17 +71,27 @@ public class ChatHandler implements CommandAPI {
                     messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY_LINE, "effect", value.parse(sender, "player_name"), "permission", value.permission());
                 });
                 break;
+            case "channel":
+                messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY);
+                chatManager.getChannels().forEach((key, value) -> {
+                    messenger.send(sender, Messenger.CHAT_STYLE_DISPLAY_LINE, "effect", value.name(), "permission", value.permission());
+                });
+                break;
             default:
                 break;
         }
     }
 
     private void onCommand(CommandSender sender, String[] args) {
-        if (args.length == 2){
-            if (sender instanceof Player player){
-                sendDisplay(player, args[1].toLowerCase());
+        if (args.length == 3){
+            if (args[2].equalsIgnoreCase("show")){
+                if (sender instanceof Player player){
+                    sendDisplay(player, args[1].toLowerCase());
+                }else {
+                    messenger.send(sender, Messenger.IS_PLAYER_COMMAND);
+                }
             }else {
-                messenger.send(sender, Messenger.IS_PLAYER_COMMAND);
+                sendUsage(sender);
             }
             return;
         }
@@ -152,8 +163,21 @@ public class ChatHandler implements CommandAPI {
                 }else if (!target.getPlayer().hasPermission(soundStyle.permission())){
                     messenger.send(sender, Messenger.CHAT_STYLE_NOT_PERMISSION, "permission", soundStyle.permission());
                 }else {
-                    chatData.setSoundStyle(soundStyle.getKey());
-                    messenger.send(sender, Messenger.CHAT_SUCCESS_SET_STYLE, "style", soundStyle.getKey());
+                    chatData.setSoundStyle(soundStyle.key());
+                    messenger.send(sender, Messenger.CHAT_SUCCESS_SET_STYLE, "style", soundStyle.key());
+                }
+                break;
+            case "channel":
+                ChatManager.Channel channel = chatManager.getChannel(key);
+                if (channel == null){
+                    messenger.send(sender, Messenger.CHAT_STYLE_NOT_EXIST);
+                }else if (!target.isOnline() || target.getPlayer() == null){
+                    messenger.send(sender, Messenger.PLAYER_NOT_ONLINE);
+                }else if (!target.getPlayer().hasPermission(channel.permission())){
+                    messenger.send(sender, Messenger.CHAT_STYLE_NOT_PERMISSION, "permission", channel.permission());
+                }else {
+                    chatData.setChannel(channel.key());
+                    messenger.send(sender, Messenger.CHAT_SUCCESS_SET_STYLE, "style", channel.key());
                 }
                 break;
             default:
@@ -197,6 +221,10 @@ public class ChatHandler implements CommandAPI {
                         .toList();
                 case "sound" -> chatManager.getSoundStyles().entrySet().stream()
                         .filter(e -> (e.getValue().permission() == null || sender.hasPermission(e.getValue().permission())) && e.getKey().contains(args[3]))
+                        .map(Map.Entry::getKey)
+                        .toList();
+                case "channel" ->chatManager.getChannels().entrySet().stream()
+                        .filter(e -> (e.getValue().permission() == null || sender.hasPermission(e.getValue().permission())) && e.getValue().name().contains(args[3]))
                         .map(Map.Entry::getKey)
                         .toList();
                 default -> List.of();

@@ -12,4 +12,8 @@ public interface EconomyData {
     boolean isCurrent();
 
     void update();
+
+    boolean isInit();
+
+    void setInit(boolean init);
 }
