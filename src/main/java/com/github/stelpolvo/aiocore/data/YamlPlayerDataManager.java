@@ -82,14 +82,25 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
         if (file.exists()) {
             try {
                 yaml.load(file);
-            } catch (IOException | InvalidConfigurationException e) {
-                logger.log(Level.SEVERE, "Failed to load YAML file for " + uuid
-                        + ", falling back to empty data", e);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE,
+                        "Failed to read YAML file for player " + uuid
+                                + " at " + file.getAbsolutePath() + ", using empty data", e);
+                yaml = new YamlConfiguration();
+            } catch (InvalidConfigurationException e) {
+                logger.log(Level.SEVERE,
+                        "Corrupted YAML file for player " + uuid
+                                + " at " + file.getAbsolutePath() + ", using empty data", e);
+                yaml = new YamlConfiguration();
+            } catch (RuntimeException e) {
+                logger.log(Level.SEVERE,
+                        "Unexpected error while loading YAML for player " + uuid
+                                + ", using empty data", e);
                 yaml = new YamlConfiguration();
             }
         }
 
-        YamlPlayerData data = new YamlPlayerData(uuid, yaml);
+        YamlPlayerData data = new YamlPlayerData(uuid, yaml, logger);
 
         if (!file.exists()) {
             data.getEconomyData().setInit(true);
@@ -108,7 +119,7 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
         try {
             getByUUID(event.getPlayer().getUniqueId());
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to load data on join for "
+            logger.log(Level.SEVERE, "Failed to load data on join for player "
                     + event.getPlayer().getUniqueId(), e);
         }
     }
@@ -124,7 +135,7 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
         try {
             save(data);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to save data on quit for " + uuid, e);
+            logger.log(Level.SEVERE, "Failed to save data on quit for player " + uuid, e);
         }
     }
 
@@ -143,7 +154,7 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
         EconomyData economyData = playerData.getEconomyData();
         ChatData chatData = playerData.getChatData();
         if (economyData == null || chatData == null) {
-            logger.warning("Player data has null components: " + yamlPlayerData.uuid);
+            logger.warning("Player data has null components for player " + yamlPlayerData.uuid);
             return false;
         }
 
@@ -160,9 +171,15 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
             if (file.exists()) {
                 try {
                     yaml.load(file);
-                } catch (IOException | InvalidConfigurationException e) {
-                    logger.log(Level.WARNING, "Failed to reload existing YAML for "
-                            + yamlPlayerData.uuid + ", overwriting", e);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING,
+                            "Failed to reload existing YAML for player " + yamlPlayerData.uuid
+                                    + ", overwriting with current data", e);
+                    yaml = new YamlConfiguration();
+                } catch (InvalidConfigurationException e) {
+                    logger.log(Level.WARNING,
+                            "Corrupted existing YAML for player " + yamlPlayerData.uuid
+                                    + ", overwriting with current data", e);
                     yaml = new YamlConfiguration();
                 }
             }
@@ -187,11 +204,11 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
             return true;
 
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Failed to save player data for "
-                    + yamlPlayerData.uuid, e);
+            logger.log(Level.SEVERE, "Failed to write YAML file for player "
+                    + yamlPlayerData.uuid + " at " + file.getAbsolutePath(), e);
             return false;
         } catch (RuntimeException e) {
-            logger.log(Level.SEVERE, "Unexpected error while saving data for "
+            logger.log(Level.SEVERE, "Unexpected error while saving data for player "
                     + yamlPlayerData.uuid, e);
             return false;
         }
@@ -212,8 +229,8 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
                     anySaved = true;
                 }
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Failed to save data for "
-                        + entry.getKey() + " during saveAll", e);
+                logger.log(Level.SEVERE, "Failed to save data for player "
+                        + entry.getKey() + " during batch save", e);
             }
         }
 
@@ -243,7 +260,7 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
 
     public static class YamlPlayerData extends AbstractPlayerData {
 
-        public YamlPlayerData(UUID uuid, YamlConfiguration yaml) {
+        public YamlPlayerData(UUID uuid, YamlConfiguration yaml, Logger logger) {
             super(uuid);
 
             Map<String, Double> economyMap = new HashMap<>();
@@ -254,12 +271,16 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
                         try {
                             economyMap.put(key, ecoSection.getDouble(key));
                         } catch (Exception e) {
-                            // 单条数据异常不影响其他条目
+                            logger.log(Level.WARNING,
+                                    "Skipping invalid economy entry '" + key
+                                            + "' for player " + uuid, e);
                         }
                     }
                 }
             } catch (Exception e) {
-                // 使用已收集到的部分数据
+                logger.log(Level.WARNING,
+                        "Failed to read economy section for player " + uuid
+                                + ", using empty data", e);
             }
             this.economyData = new EconomyDataImpl(economyMap);
 
@@ -279,7 +300,9 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
                     channel = chatSection.getString("channel", ChatData.DEFAULT_KEY);
                 }
             } catch (Exception e) {
-                // 使用默认值
+                logger.log(Level.WARNING,
+                        "Failed to read chat section for player " + uuid
+                                + ", using default styles", e);
             }
 
             this.chatData = new ChatDataImpl(nameStyle, messageStyle, chatStyle, soundStyle, channel);
