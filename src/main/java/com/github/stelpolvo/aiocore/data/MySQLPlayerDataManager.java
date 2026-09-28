@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 @SuppressWarnings("all")
 public class MySQLPlayerDataManager extends SQLPlayerDataManager {
 
-    public static final String CREATE_PLAYER_TABLE = """
+    private static final String CREATE_TABLE = """
             CREATE TABLE IF NOT EXISTS aio (
             uuid CHAR(36) PRIMARY KEY,
             username VARCHAR(16) NOT NULL,
@@ -17,34 +17,27 @@ public class MySQLPlayerDataManager extends SQLPlayerDataManager {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """;
 
-    public static final String INSERT_PLAYER = """
-            INSERT IGNORE INTO aio (uuid, username, json_data)
+    private static final String UPSERT_PLAYER = """
+            INSERT INTO aio (uuid, username, json_data)
             VALUES (?, ?, '{}')
+            ON DUPLICATE KEY UPDATE username = VALUES(username)
             """;
 
-    public static final String UPDATE_AIO_BY_UUID = """
-            UPDATE aio
-            SET json_data = ?
-            WHERE uuid = ?
+    private static final String UPDATE_AIO = """
+            UPDATE aio SET json_data = ? WHERE uuid = ?
             """;
+
+    private static final String SELECT_BY_UUID = "SELECT * FROM aio WHERE uuid = ?";
+    private static final String SELECT_BY_NAME = "SELECT * FROM aio WHERE username = ?";
 
     public MySQLPlayerDataManager(ConfigurationSection config, Logger logger, Messenger messenger) {
         super(config, logger, messenger, "com.mysql.cj.jdbc.Driver");
         initialize();
     }
 
-    @Override
-    protected String createTableSQL() {
-        return CREATE_PLAYER_TABLE;
-    }
-
-    @Override
-    protected String insertPlayerSQL() {
-        return INSERT_PLAYER;
-    }
-
-    @Override
-    protected String updateSQL() {
-        return UPDATE_AIO_BY_UUID;
-    }
+    @Override protected String createTableSQL()   { return CREATE_TABLE; }
+    @Override protected String upsertPlayerSQL()  { return UPSERT_PLAYER; }
+    @Override protected String updateSQL()        { return UPDATE_AIO; }
+    @Override protected String selectByUuidSQL()  { return SELECT_BY_UUID; }
+    @Override protected String selectByNameSQL()  { return SELECT_BY_NAME; }
 }

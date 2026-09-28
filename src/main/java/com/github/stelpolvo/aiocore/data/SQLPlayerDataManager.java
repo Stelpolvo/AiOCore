@@ -23,6 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +33,7 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
     protected final HikariConfig hikariConfig = new HikariConfig();
     protected HikariDataSource dataSource;
     protected final Gson gson = new Gson();
-    protected final Map<String, UUID> playerRecordMap = new HashMap<>();
+    protected final Map<String, UUID> playerRecordMap = new ConcurrentHashMap<>();
 
     public SQLPlayerDataManager(ConfigurationSection config, Logger logger,
                                 Messenger messenger, String driverClassName) {
@@ -57,8 +58,10 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
     }
 
     protected abstract String createTableSQL();
-    protected abstract String insertPlayerSQL();
+    protected abstract String upsertPlayerSQL();
     protected abstract String updateSQL();
+    protected abstract String selectByUuidSQL();
+    protected abstract String selectByNameSQL();
 
     protected PlayerData createPlayerData(UUID uuid) {
         return new SimplePlayerData(uuid);
@@ -114,28 +117,24 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
             return;
         }
 
-        PlayerData fresh = createPlayerData(uuid);
-        fresh.setEconomyData(new EconomyDataImpl(new HashMap<>()));
-        fresh.setChatData(new ChatDataImpl(
-                ChatData.DEFAULT_KEY,
-                ChatData.DEFAULT_KEY,
-                ChatData.DEFAULT_KEY,
-                ChatData.DEFAULT_KEY,
-                ChatData.DEFAULT_KEY
-        ));
-        fresh.getEconomyData().setInit(true);
-        fresh.getChatData().setInit(true);
-        playerDataMap.put(uuid, fresh);
-
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(insertPlayerSQL())) {
+             PreparedStatement ps = conn.prepareStatement(upsertPlayerSQL())) {
             ps.setString(1, uuid.toString());
             ps.setString(2, name);
             ps.executeUpdate();
             conn.commit();
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Failed to insert player " + uuid, e);
+            logger.log(Level.SEVERE, "Failed to upsert player row " + uuid, e);
         }
+
+        PlayerData fresh = createPlayerData(uuid);
+        fresh.setEconomyData(new EconomyDataImpl(new HashMap<>()));
+        fresh.setChatData(new ChatDataImpl(
+                ChatData.DEFAULT_KEY, ChatData.DEFAULT_KEY,
+                ChatData.DEFAULT_KEY, ChatData.DEFAULT_KEY, ChatData.DEFAULT_KEY));
+        fresh.getEconomyData().setInit(true);
+        fresh.getChatData().setInit(true);
+        playerDataMap.put(uuid, fresh);
     }
 
     protected PlayerData packet(ResultSet rs) throws SQLException {
@@ -189,8 +188,7 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
 
     protected PlayerData loadFromDatabase(UUID uuid) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT * FROM aio WHERE uuid = ?")) {
+             PreparedStatement ps = conn.prepareStatement(selectByUuidSQL())) {
             ps.setString(1, uuid.toString());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return packet(rs);
@@ -209,8 +207,7 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
         }
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT * FROM aio WHERE username = ?")) {
+             PreparedStatement ps = conn.prepareStatement(selectByNameSQL())) {
             ps.setString(1, playerName);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return packet(rs);
@@ -255,9 +252,7 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
 
     @Override
     public boolean save(PlayerData data) {
-        if (data == null) {
-            return false;
-        }
+        if (data == null) return false;
 
         EconomyData economyData = data.getEconomyData();
         ChatData chatData = data.getChatData();
@@ -292,8 +287,32 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
                     return true;
                 }
 
+                // 行不存在：说明 upsert 失败过，补一次
                 conn.rollback();
-                logger.warning("No row to update for player " + uuid);
+                logger.warning("No row to update for player " + uuid + ", retrying upsert");
+
+                try (PreparedStatement upsert = conn.prepareStatement(upsertPlayerSQL())) {
+                    upsert.setString(1, uuid.toString());
+                    upsert.setString(2, playerRecordMap.entrySet().stream()
+                            .filter(e -> e.getValue().equals(uuid))
+                            .map(Map.Entry::getKey)
+                            .findFirst()
+                            .orElse("unknown"));
+                    upsert.executeUpdate();
+
+                    ps.setString(1, buildJson(economyData, chatData));
+                    ps.setString(2, uuid.toString());
+                    int retried = ps.executeUpdate();
+                    conn.commit();
+
+                    if (retried >= 1) {
+                        economyData.setInit(false);
+                        economyData.setCurrent(true);
+                        chatData.setInit(false);
+                        chatData.setCurrent(true);
+                        return true;
+                    }
+                }
                 return false;
 
             } catch (SQLException e) {
@@ -320,64 +339,30 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
         }
 
         long start = System.nanoTime();
-        boolean isSuccess = false;
-        boolean hasDirty = false;
+        int success = 0;
+        int failed = 0;
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(updateSQL())) {
-
+        for (Map.Entry<UUID, PlayerData> entry : playerDataMap.entrySet()) {
             try {
-                for (Map.Entry<UUID, PlayerData> e : playerDataMap.entrySet()) {
-                    PlayerData pd = e.getValue();
-                    if (pd == null) {
-                        continue;
-                    }
-
-                    EconomyData eco = pd.getEconomyData();
-                    ChatData chat = pd.getChatData();
-                    if (eco == null || chat == null) {
-                        continue;
-                    }
-
-                    boolean ecoDirty = !eco.isCurrent() || eco.isInit();
-                    boolean chatDirty = !chat.isCurrent() || chat.isInit();
-                    if (!ecoDirty && !chatDirty) {
-                        continue;
-                    }
-
-                    hasDirty = true;
-                    ps.setString(1, buildJson(eco, chat));
-                    ps.setString(2, e.getKey().toString());
-                    ps.addBatch();
+                if (save(entry.getValue())) {
+                    success++;
+                } else {
+                    failed++;
                 }
-
-                ps.executeBatch();
-                conn.commit();
-                isSuccess = true;
-            } catch (SQLException e) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollbackEx) {
-                    e.addSuppressed(rollbackEx);
-                }
-                throw e;
+            } catch (Exception e) {
+                failed++;
+                logger.log(Level.SEVERE, "Failed to save player " + entry.getKey()
+                        + " during saveAll", e);
             }
+        }
 
-        } catch (SQLException ex) {
-            logger.log(Level.SEVERE, "Failed to save player data in batch", ex);
-        } catch (RuntimeException ex) {
-            logger.log(Level.SEVERE, "Unexpected error while saving player data", ex);
-        } finally {
-            if (isSuccess && hasDirty) {
-                playerDataMap.values().forEach(d -> {
-                    d.getEconomyData().setCurrent(true);
-                    d.getEconomyData().setInit(false);
-                    d.getChatData().setCurrent(true);
-                    d.getChatData().setInit(false);
-                });
-                messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_SAVE_DATA,
-                        "time", (System.nanoTime() - start) / 1_000_000);
-            }
+        if (success > 0) {
+            messenger.send(Bukkit.getConsoleSender(), Messenger.SUCCESS_SAVE_DATA,
+                    "time", (System.nanoTime() - start) / 1_000_000);
+        }
+        if (failed > 0) {
+            logger.warning("saveAll completed with " + failed
+                    + " failures out of " + playerDataMap.size());
         }
     }
 
@@ -387,8 +372,41 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
         }
     }
 
+    private static final long HEALTH_CHECK_INTERVAL_MS = 5_000;
+    private volatile long lastCheckAt = 0;
+    private volatile boolean lastResult = true;
+
+    @Override
     public boolean isEnabled() {
-        return dataSource != null && dataSource.isRunning();
+        if (dataSource == null || dataSource.isClosed()) {
+            return false;
+        }
+
+        long now = System.currentTimeMillis();
+        if (now - lastCheckAt < HEALTH_CHECK_INTERVAL_MS) {
+            return lastResult;
+        }
+
+        synchronized (this) {
+            if (System.currentTimeMillis() - lastCheckAt < HEALTH_CHECK_INTERVAL_MS) {
+                return lastResult;
+            }
+
+            boolean result;
+            try (Connection c = dataSource.getConnection()) {
+                result = c.isValid(2);
+            } catch (SQLException e) {
+                result = false;
+                logger.log(Level.WARNING, "Database health check failed", e);
+            } catch (RuntimeException e) {
+                result = false;
+                logger.log(Level.SEVERE, "Unexpected error during health check", e);
+            }
+
+            lastCheckAt = System.currentTimeMillis();
+            lastResult = result;
+            return result;
+        }
     }
 
     public static class SimplePlayerData extends AbstractPlayerData {
