@@ -28,11 +28,13 @@ permissions:
     children:
       aio.command.def: true
       aio.command.admin.economy: true
+      aio.command.admin.stash: true
   aio.command.def:
     default: true
     children:
       aio.command.def.economy: true
       aio.command.def.chat: true
+      aio.command.def.stash: true
   aio.command.def.economy:
     default: true
     children:
@@ -76,3 +78,28 @@ permissions:
     default: true
   aio.command.def.chat.channel:
     default: true
+
+  # ============================================================
+  # Stash
+  # 页码权限逐页判定，page.N 全部默认 false，由权限插件按需授予。
+  # 新增页时在下面补 aio.command.def.stash.page.N: default: false 即可。
+  # ============================================================
+  aio.command.def.stash:
+    default: true
+    children:
+      aio.command.def.stash.page.1: true
+      aio.command.def.stash.page.2: true
+      aio.command.def.stash.page.3: true
+  aio.command.def.stash.page.1:
+    default: false
+  aio.command.def.stash.page.2:
+    default: false
+  aio.command.def.stash.page.3:
+    default: false
+
+  aio.command.admin.stash:
+    default: op
+    children:
+      aio.command.admin.stash.view: true
+  aio.command.admin.stash.view:
+    default: op

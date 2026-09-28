@@ -1,5 +1,4 @@
 settings:
-  # 数据保存间隔（秒）
   save-interval-seconds: 10
   storage:
     # yml/mysql/sqlite
@@ -22,15 +21,20 @@ settings:
     player-not-online: "这个玩家不在线"
     invalid-data-source: "数据源不可用"
 
+stash:
+  max-pages: 3
+  page-size: 54
+  save-interval-seconds: 10
+  messages:
+    stash-disabled: "&c✖ &f仓库功能当前不可用"
+    stash-locked: "&c✖ &f你没有解锁第 &e{page} &f页"
+    stash-invalid-page: "&c✖ &f无效的页码: &e{page}"
+    stash-open-failed: "&c✖ &f打开仓库失败，请稍后重试"
+    stash-view-readonly: "&e➤ &f你正在查看 &e{player} &f的仓库，仅可查看不可修改"
+
 economy:
-  # 是否启用经济系统
   enabled: true
-  # 货币作为 Vault 默认经济
   vault: "金币"
-  # ============================================================
-  # 货币定义
-  # 每个货币一个节点，键名即为货币 ID（存储时使用的字段名）
-  # ============================================================
   currencies:
     金币:
       display-name: "金币"
@@ -51,7 +55,6 @@ economy:
 
   messages:
     enable-vault: "&a✔ &f已绑定 Vault 货币: &e{currency}"
-    # {sender} 发送者, {receiver} 接收者, {amount} 金额, {currency} 货币显示名, {fee} 手续费
     success-sender:   "&a➤ &f你向 &e{receiver} &f转账了 &6{amount} {currency}"
     success-receiver: "&a➤ &f你收到了来自 &e{sender} &f的 &6{amount} {currency}"
     look:             "&a➤ &f你的 &e{currency} &f为 &6{amount}"

@@ -4,7 +4,7 @@
   <groupId>com.github.stelpolvo.aiocore</groupId>
   <artifactId>AiOCore</artifactId>
   <name>AiOCore</name>
-  <version>0.3.0-alpha.1</version>
+  <version>0.4.0-alpha.1</version>
   <build>
     <defaultGoal>clean package</defaultGoal>
     <resources>
@@ -56,6 +56,10 @@
     <repository>
       <id>placeholderapi</id>
       <url>https://repo.helpch.at/releases/</url>
+    </repository>
+    <repository>
+      <id>codemc-repo</id>
+      <url>https://repo.codemc.io/repository/maven-public/</url>
     </repository>
   </repositories>
   <dependencies>

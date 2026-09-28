@@ -15,6 +15,8 @@ public interface AiO {
 
     ChatManager getChatManager();
 
+    StashManager getStashManager();
+
     PlayerDataManager getPlayerDataManager();
 
 }

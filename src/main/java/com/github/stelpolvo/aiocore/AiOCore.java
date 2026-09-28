@@ -1,6 +1,7 @@
 package com.github.stelpolvo.aiocore;
 
 import com.github.stelpolvo.aiocore.api.*;
+import com.github.stelpolvo.aiocore.api.storage.StashStorage;
 import com.github.stelpolvo.aiocore.command.MainCommand;
 import com.github.stelpolvo.aiocore.data.MySQLPlayerDataManager;
 import com.github.stelpolvo.aiocore.data.SQLitePlayerDataManager;
@@ -9,6 +10,7 @@ import com.github.stelpolvo.aiocore.model.chat.ChatManagerImpl;
 import com.github.stelpolvo.aiocore.model.economy.EconomyManagerImpl;
 import com.github.stelpolvo.aiocore.model.message.MessengerImpl;
 import com.github.stelpolvo.aiocore.model.placeholder.AiOHook;
+import com.github.stelpolvo.aiocore.model.stash.StashManagerImpl;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
@@ -26,10 +28,12 @@ public final class AiOCore extends JavaPlugin implements AiO {
     private PlaceholderExpansion placeholder;
     private EconomyManager economyManager;
     private ChatManager chatManager;
+    private StashManager stashManager;
     private PlayerDataManager playerDataManager;
     private Messenger messenger;
 
     private BukkitTask task;
+    private BukkitTask stashTask;
     @Override
     public void onEnable() {
         // Plugin startup logic
@@ -77,6 +81,14 @@ public final class AiOCore extends JavaPlugin implements AiO {
             this.playerDataManager = new YamlPlayerDataManager(new File(getDataFolder(),"/data"), getLogger(), messenger);
         }
         Bukkit.getPluginManager().registerEvents(this.playerDataManager, this);
+        // stash
+        ConfigurationSection stashSec = config.getConfigurationSection("stash");
+        this.stashManager = new StashManagerImpl(
+                stashSec,
+                StashStorage.create(this.playerDataManager, getLogger()),
+                this.messenger,
+                getLogger());
+        Bukkit.getPluginManager().registerEvents(this.stashManager, this);
         // economy
         this.economyManager = new EconomyManagerImpl();
         this.economyManager.load(config.getConfigurationSection("economy"), playerDataManager, getLogger(), messenger);
@@ -89,12 +101,18 @@ public final class AiOCore extends JavaPlugin implements AiO {
             task = null;
         }
         long updateDuration = Math.max(1, config.getLong("settings.save-interval-seconds"))*20;
+        long stashDuration = Math.max(1, config.getLong("stash.save-interval-seconds", 10))*20;
         task = new BukkitRunnable() {
             public void run() {
 
                 saveData();
             }
         }.runTaskTimer(this, updateDuration, updateDuration);
+        stashTask = new BukkitRunnable() {
+            public void run() {
+                stashManager.saveAll();
+            }
+        }.runTaskTimer(this, stashDuration, stashDuration);
         this.placeholder = new AiOHook(this);
         this.placeholder.register();
         try {
@@ -109,6 +127,13 @@ public final class AiOCore extends JavaPlugin implements AiO {
         // Plugin shutdown logic
         task.cancel();
         task = null;
+        if (stashTask != null){
+            stashTask.cancel();
+            stashTask = null;
+        }
+        if (this.stashManager != null){
+            this.stashManager.saveAll();
+        }
         this.playerDataManager.disable();
         this.getServer().getMessenger().unregisterOutgoingPluginChannel(this);
         this.getServer().getMessenger().unregisterIncomingPluginChannel(this);
@@ -124,10 +149,6 @@ public final class AiOCore extends JavaPlugin implements AiO {
         return this;
     }
 
-    @Override
-    public PlaceholderExpansion getPlaceholderExpansion() {
-        return placeholder;
-    }
 
     @Override
     public Messenger getMessenger() {
@@ -142,6 +163,11 @@ public final class AiOCore extends JavaPlugin implements AiO {
     @Override
     public ChatManager getChatManager() {
         return this.chatManager;
+    }
+
+    @Override
+    public StashManager getStashManager() {
+        return this.stashManager;
     }
 
     @Override

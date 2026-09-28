@@ -4,6 +4,7 @@ import com.github.stelpolvo.aiocore.api.AiO;
 import com.github.stelpolvo.aiocore.api.Messenger;
 import com.github.stelpolvo.aiocore.command.handler.ChatHandler;
 import com.github.stelpolvo.aiocore.command.handler.EconomyHandler;
+import com.github.stelpolvo.aiocore.command.handler.StashHandler;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
@@ -27,6 +28,13 @@ public class MainCommand implements TabExecutor {
         }
         if (inst.getChatManager().isEnabled()){
             main.commands.put("chat", new ChatHandler(inst.getMessenger(), inst.getChatManager(), inst.getPlayerDataManager()));
+        }
+        if (inst.getStashManager() != null && inst.getStashManager().isEnabled()){
+            main.commands.put("stash", new StashHandler(
+                    inst.getStashManager(),
+                    inst.getMessenger(),
+                    inst.getJavaPlugin().getLogger(),
+                    inst.getStashManager().getMaxPages()));
         }
     }
 

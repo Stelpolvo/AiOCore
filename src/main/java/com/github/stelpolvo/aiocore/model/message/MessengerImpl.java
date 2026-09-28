@@ -54,6 +54,16 @@ public class MessengerImpl implements Messenger {
             });
         }
 
+        ConfigurationSection stashSec = config.getConfigurationSection("stash.messages");
+        if (stashSec != null) {
+            stashSec.getKeys(false).forEach(k -> {
+                String value = stashSec.getString(k);
+                if (value != null) {
+                    messages.put(k, value);
+                }
+            });
+        }
+
     }
 
     @Override

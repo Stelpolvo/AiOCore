@@ -4,8 +4,11 @@ import com.github.stelpolvo.aiocore.api.Messenger;
 import com.github.stelpolvo.aiocore.api.data.ChatData;
 import com.github.stelpolvo.aiocore.api.data.EconomyData;
 import com.github.stelpolvo.aiocore.api.data.PlayerData;
+import com.github.stelpolvo.aiocore.api.storage.StashStorage;
 import com.github.stelpolvo.aiocore.model.chat.ChatDataImpl;
 import com.github.stelpolvo.aiocore.model.economy.EconomyDataImpl;
+import com.github.stelpolvo.aiocore.model.stash.SqlStashStorage;
+import com.github.stelpolvo.aiocore.model.stash.StashManagerImpl;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -62,6 +65,22 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
     protected abstract String updateSQL();
     protected abstract String selectByUuidSQL();
     protected abstract String selectByNameSQL();
+
+    /**
+     * 仓库表（aio_stash）的方言语句。
+     */
+    protected abstract StashStorage.SqlConfig getStashSql();
+
+    public HikariDataSource getDataSource() {
+        return dataSource;
+    }
+
+    /**
+     * 组装仓库存储，供 StashStorage.create 调用。
+     */
+    public StashStorage createStashStorage() {
+        return new SqlStashStorage(dataSource, getStashSql(), logger);
+    }
 
     protected PlayerData createPlayerData(UUID uuid) {
         return new SimplePlayerData(uuid);
@@ -134,7 +153,18 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
                 ChatData.DEFAULT_KEY, ChatData.DEFAULT_KEY, ChatData.DEFAULT_KEY));
         fresh.getEconomyData().setInit(true);
         fresh.getChatData().setInit(true);
+        bindStash(fresh);
         playerDataMap.put(uuid, fresh);
+    }
+
+    /**
+     * 仓库数据由 StashManager 统一持有并按需载入，这里只把实例挂到玩家数据上。
+     */
+    private void bindStash(PlayerData data) {
+        StashManagerImpl stash = StashManagerImpl.current();
+        if (stash != null) {
+            data.setStashData(stash.getStashData(data.getUUID()));
+        }
     }
 
     protected PlayerData packet(ResultSet rs) throws SQLException {
@@ -142,12 +172,12 @@ public abstract class SQLPlayerDataManager extends AbstractPlayerDataManager {
         PlayerData data = createPlayerData(uuid);
 
         JsonObject root = null;
-        String json = rs.getString("json_data");
+        String json = rs.getString("config_data");
         if (json != null && !json.isBlank()) {
             try {
                 root = gson.fromJson(json, JsonObject.class);
             } catch (Exception ex) {
-                logger.warning("Corrupted json_data for player " + uuid);
+                logger.warning("Corrupted config_data for player " + uuid);
             }
         }
 

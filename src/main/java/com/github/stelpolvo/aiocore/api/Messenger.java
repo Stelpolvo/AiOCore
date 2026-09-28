@@ -36,6 +36,12 @@ public interface Messenger {
     String CHAT_STYLE_DISPLAY = "style-display";
     String CHAT_STYLE_DISPLAY_LINE = "style-display-line";
 
+    String STASH_DISABLED = "stash-disabled";
+    String STASH_LOCKED = "stash-locked";
+    String STASH_INVALID_PAGE = "stash-invalid-page";
+    String STASH_OPEN_FAILED = "stash-open-failed";
+    String STASH_VIEW_READONLY = "stash-view-readonly";
+
     void send(CommandSender sender, String msg);
     boolean send(CommandSender sender, String key, Object... keyValues);
     void load(YamlConfiguration config);

@@ -6,6 +6,7 @@ import com.github.stelpolvo.aiocore.api.data.EconomyData;
 import com.github.stelpolvo.aiocore.api.data.PlayerData;
 import com.github.stelpolvo.aiocore.model.chat.ChatDataImpl;
 import com.github.stelpolvo.aiocore.model.economy.EconomyDataImpl;
+import com.github.stelpolvo.aiocore.model.stash.StashManagerImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
@@ -106,12 +107,23 @@ public class YamlPlayerDataManager extends AbstractPlayerDataManager {
             data.getEconomyData().setInit(true);
             data.getChatData().setInit(true);
         }
+
+        // 仓库独立存放于 stash/<uuid>.json，这里只挂实例，不写进玩家 yml
+        StashManagerImpl stash = StashManagerImpl.current();
+        if (stash != null) {
+            data.setStashData(stash.getStashData(uuid));
+        }
         return data;
     }
 
     @Override
     public Map<UUID, PlayerData> getPlayerData() {
         return playerDataMap;
+    }
+
+    @Override
+    public File getStashFolder() {
+        return new File(dataFolder, "stash");
     }
 
     @EventHandler

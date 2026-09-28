@@ -8,4 +8,6 @@ public interface PlayerData {
     void setEconomyData(EconomyData data);
     ChatData getChatData();
     void setChatData(ChatData data);
+    StashData getStashData();
+    void setStashData(StashData data);
 }
