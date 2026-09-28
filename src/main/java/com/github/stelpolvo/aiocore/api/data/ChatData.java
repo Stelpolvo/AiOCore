@@ -1,6 +1,6 @@
 package com.github.stelpolvo.aiocore.api.data;
 
-public interface ChatData {
+public interface ChatData extends AbstractData{
     String DEFAULT_KEY = "default";
     String getNameStyle();
     String getMessageStyle();
@@ -12,8 +12,4 @@ public interface ChatData {
     void setChatStyle(String chatStyle);
     void setSoundStyle(String soundStyle);
     void setChannel(String channel);
-    boolean isCurrent();
-    void setCurrent(boolean current);
-    boolean isInit();
-    void setInit(boolean init);
 }

@@ -1,42 +1,20 @@
 package com.github.stelpolvo.aiocore.api;
 
-import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public interface AiO {
     String NAME = "aio";
 
-    default void saveData(){}
+    void saveData();
 
-    default JavaPlugin getJavaPlugin() {
-        return null;
-    }
+    JavaPlugin getJavaPlugin();
 
-    default PlaceholderExpansion getPlaceholderExpansion() {
-        return null;
-    }
+    Messenger getMessenger();
 
-    default Messenger getMessenger() {
-        return null;
-    }
+    EconomyManager getEconomyManager();
 
-    default EconomyManager getEconomyManager() {
-        return null;
-    }
+    ChatManager getChatManager();
 
-    default ChatManager getChatManager() {
-        return null;
-    }
-
-    default PlayerDataManager getPlayerDataManager(){ return null; }
-
-    default PanelManager getPanelManager() {
-        return null;
-    }
-
-    default PluginManager getPluginManager() {
-        return null;
-    }
+    PlayerDataManager getPlayerDataManager();
 
 }
